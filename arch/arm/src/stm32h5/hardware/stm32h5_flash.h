@@ -244,33 +244,20 @@
 /* Register Bitfield Definitions ********************************************/
 
 
-/* TODO: Ended here 9/11/2024 */
 /* Flash Access Control Register (ACR) */
 
 #define FLASH_ACR_LATENCY_SHIFT   (0)
 #define FLASH_ACR_LATENCY_MASK    (0xF << FLASH_ACR_LATENCY_SHIFT)
-#  define FLASH_ACR_LATENCY(n)    ((n) << FLASH_ACR_LATENCY_SHIFT)  /* n wait states, for Vcore range 1 and 2. */
-#  define FLASH_ACR_LATENCY_0     ( 0 << FLASH_ACR_LATENCY_SHIFT)   /* 0000: Zero wait states    */
-#  define FLASH_ACR_LATENCY_1     ( 1 << FLASH_ACR_LATENCY_SHIFT)   /* 0001: One wait state      */
-#  define FLASH_ACR_LATENCY_2     ( 2 << FLASH_ACR_LATENCY_SHIFT)   /* 0010: Two wait states     */
-#  define FLASH_ACR_LATENCY_3     ( 3 << FLASH_ACR_LATENCY_SHIFT)   /* 0011: Three wait states   */
-#  define FLASH_ACR_LATENCY_4     ( 4 << FLASH_ACR_LATENCY_SHIFT)   /* 0100: Four wait states    */
-#  define FLASH_ACR_LATENCY_5     ( 5 << FLASH_ACR_LATENCY_SHIFT)   /* 0101: Five wait states    */
-#  define FLASH_ACR_LATENCY_6     ( 6 << FLASH_ACR_LATENCY_SHIFT)   /* 0110: Six wait states     */
-#  define FLASH_ACR_LATENCY_7     ( 7 << FLASH_ACR_LATENCY_SHIFT)   /* 0111: Seven wait state    */
-#  define FLASH_ACR_LATENCY_8     ( 8 << FLASH_ACR_LATENCY_SHIFT)   /* 1000: Eight wait states   */
-#  define FLASH_ACR_LATENCY_9     ( 9 << FLASH_ACR_LATENCY_SHIFT)   /* 1001: Nine wait states    */
-#  define FLASH_ACR_LATENCY_10    (10 << FLASH_ACR_LATENCY_SHIFT)   /* 1010: Ten wait states     */
-#  define FLASH_ACR_LATENCY_11    (11 << FLASH_ACR_LATENCY_SHIFT)   /* 1011: Eleven wait states  */
-#  define FLASH_ACR_LATENCY_12    (12 << FLASH_ACR_LATENCY_SHIFT)   /* 1100: Twelve wait states  */
-#  define FLASH_ACR_LATENCY_13    (13 << FLASH_ACR_LATENCY_SHIFT)   /* 1101: Thirteen wait state */
-#  define FLASH_ACR_LATENCY_14    (14 << FLASH_ACR_LATENCY_SHIFT)   /* 1110: Fourteen states     */
-#  define FLASH_ACR_LATENCY_15    (15 << FLASH_ACR_LATENCY_SHIFT)   /* 1111: Fifteen wait states */
+#  define FLASH_ACR_LATENCY(n)    ((n) << FLASH_ACR_LATENCY_SHIFT)  /* n wait states, for Vcore range 0-3. */
 
-#define FLASH_ACR_RUN_PD            (1 << 13) /* Bit 13: Flash mode during Run    */
-#define FLASH_ACR_SLEEP_PD          (1 << 14) /* Bit 14: Flash mode during Sleep  */
-#define FLASH_ACR_LVE               (1 << 15) /* Bit 15: Flash low-voltage enable */
+#define FLASH_ACR_WRHIGHFREQ_SHIFT (4)
+#define FLASH_ACR_WRHIGHFREQ_MASK  (0x3 << FLASH_ACR_WRHIGHFREQ_SHIFT)
+#  define FLASH_ACR_WRHIGHFREQ(n)  ((n) << FLASH_ACR_WRHIGHFREQ_SHIFT)  /* Used to control the delay between NVM 
+									 * signals during programming operations 
+									 */
+#define FLASH_ACR_PRFTEN           (1 << 8) /* Bit 8: Prefetch Enable */
 
+/* TODO: Ended here 10/25/2024 */
 /* Flash Status Register (SR) */
 
 #define FLASH_SR_EOP                (1 << 0)  /* Bit 0:  End of operation */

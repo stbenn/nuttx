@@ -781,6 +781,128 @@ static inline void rcc_enableccip(void)
 }
 
 /****************************************************************************
+ * Name: rcc_set_flash_latency
+ *
+ * Description:
+ *   Set proper flash latency based on VOS Range and SYSCLK_FREQUENCY.
+ *   See table 44 in RM0481.
+ *   TODO - Set prefetch enable based on board.h variable. 
+ *
+ ****************************************************************************/
+
+static inline void rcc_set_flash_latency(void)
+{
+  uint32_t vos = ((getreg(STM32H5_PWR_VOSCR) & PWR_VOSCR_VOS_MASK) >> 
+                   PWR_VOSCR_VOS_SHIFT);
+
+  uint32_t regval;
+
+  if (vos == 0)
+    {
+      if (STM32H5_SYSCLK_FREQUENCY <= 20000000)
+        {
+          regval = FLASH_ACR_LATENCY(0) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 40000000)
+        {
+          regval = FLASH_ACR_LATENCY(1) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 60000000)
+        {
+          regval = FLASH_ACR_LATENCY(2) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 80000000)
+        {
+          regval = FLASH_ACR_LATENCY(3) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+      else
+        {
+          regval = FLASH_ACR_LATENCY(4) | FLASH_ACR_WRHIGHFREQ(2);
+        }
+    }
+  else if (vos == 1)
+    {
+      if (STM32H5_SYSCLK_FREQUENCY <= 30000000)
+        {
+          regval = FLASH_ACR_LATENCY(0) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 60000000)
+        {
+          regval = FLASH_ACR_LATENCY(1) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 90000000)
+        {
+          regval = FLASH_ACR_LATENCY(2) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 120000000)
+        {
+          regval = FLASH_ACR_LATENCY(3) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+       else
+        {
+          regval = FLASH_ACR_LATENCY(4) | FLASH_ACR_WRHIGHFREQ(2);
+        }
+    }
+  else if (vos == 2)
+    {
+      if (STM32H5_SYSCLK_FREQUENCY <= 34000000)
+        {
+          regval = FLASH_ACR_LATENCY(0) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 68000000)
+        {
+          regval = FLASH_ACR_LATENCY(1) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 102000000)
+        {
+          regval = FLASH_ACR_LATENCY(2) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 136000000)
+        {
+          regval = FLASH_ACR_LATENCY(3) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 170000000)
+        {
+          regval = FLASH_ACR_LATENCY(4) | FLASH_ACR_WRHIGHFREQ(2);
+        }
+      else
+        {
+          regval = FLASH_ACR_LATENCY(5) | FLASH_ACR_WRHIGHFREQ(2);
+        }
+    }
+  else /* vos == 3 */
+    {
+      if (STM32H5_SYSCLK_FREQUENCY <= 42000000)
+        {
+          regval = FLASH_ACR_LATENCY(0) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 84000000)
+        {
+          regval = FLASH_ACR_LATENCY(1) | FLASH_ACR_WRHIGHFREQ(0);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 126000000)
+        {
+          regval = FLASH_ACR_LATENCY(2) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 168000000)
+        {
+          regval = FLASH_ACR_LATENCY(3) | FLASH_ACR_WRHIGHFREQ(1);
+        }
+      else if (STM32H5_SYSCLK_FREQUENCY <= 210000000)
+        {
+          regval = FLASH_ACR_LATENCY(4) | FLASH_ACR_WRHIGHFREQ(2);
+        }
+      else
+        {
+          regval = FLASH_ACR_LATENCY(5) | FLASH_ACR_WRHIGHFREQ(2);
+        }
+    }
+
+  putreg32(regval, STM32H5_FLASH_ACR);
+
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -801,7 +923,6 @@ void stm32h5_rcc_enableperipherals(void)
 
 #ifdef STM32H5_USE_HSI48
   /* Enable HSI48 clocking to support USB transfers or RNG */
-
   stm32h5_enable_hsi48(STM32L4_HSI48_SYNCSRC);
 #endif
 
@@ -833,7 +954,6 @@ void stm32h5_stdclockconfig(void)
   regval |= STM32H5_CR_HSIDIV;
 #else
   /* Use default (32 MHz) */
-
 #endif
 
   putreg32(regval, STM32H5_RCC_CR);
@@ -984,7 +1104,7 @@ void stm32h5_stdclockconfig(void)
       
       /* Set the PLL1 source and main divider */
 
-/* Can keep below ifdefs and add ifdefs on top for board.h definitions */
+/* Use PLL1SRC defnitions to override USE_XXX */
 
 #ifdef STM32H5_PLL1SRC_HSI
       regval |= RCC_PLL1CFGR_PLL1SRC_HSI;
@@ -1003,7 +1123,7 @@ void stm32h5_stdclockconfig(void)
       /* Set RGE, FRACEN, VCOSEL, and M from board.h */
 
       regval |= (STM32H5_PLL1CFGR_PLL1RGE | STM32H5_PLL1CFGR_PLL1FRACEN | 
-		 STM32H5_PLL1CFGR_PLL1VCOSEL | STM32H5_PLL1CFGR_PLL1M);
+		             STM32H5_PLL1CFGR_PLL1VCOSEL | STM32H5_PLL1CFGR_PLL1M);
 
 #ifdef STM32H5_PLL1CFGR_PLL1P_ENABLED
       regval |= RCC_PLL1CFGR_PLL1PEN;
@@ -1025,7 +1145,7 @@ void stm32h5_stdclockconfig(void)
 
       regval  = getreg32(STM32H5_RCC_PLL1DIVR);
       regval = (STM32H5_PLL1DIVR_PLL1N | STM32H5_PLL1DIVR_PLL1P | 
-		STM32H5_PLL1DIVR_PLL1Q | STM32H5_PLL1DIVR_PLL1R);
+		            STM32H5_PLL1DIVR_PLL1Q | STM32H5_PLL1DIVR_PLL1R);
       putreg32(regval, STM32H5_RCC_PLL1DIVR);
       
       /* PLL1FRACR */
@@ -1071,7 +1191,7 @@ void stm32h5_stdclockconfig(void)
       /* Set RGE, FRACEN, VCOSEL, and M from board.h */
 
       regval |= (STM32H5_PLL2CFGR_PLL2RGE | STM32H5_PLL2CFGR_PLL2FRACEN | 
-		 STM32H5_PLL2CFGR_PLL2VCOSEL | STM32H5_PLL2CFGR_PLL2M);
+                 STM32H5_PLL2CFGR_PLL2VCOSEL | STM32H5_PLL2CFGR_PLL2M);
 
 #ifdef STM32H5_PLL2CFGR_PLL2P_ENABLED
       regval |= RCC_PLL2CFGR_PLL2PEN;
@@ -1093,7 +1213,7 @@ void stm32h5_stdclockconfig(void)
 
       regval  = getreg32(STM32H5_RCC_PLL2DIVR);
       regval = (STM32H5_PLL2DIVR_PLL2N | STM32H5_PLL2DIVR_PLL2P | 
-		STM32H5_PLL2DIVR_PLL2Q | STM32H5_PLL2DIVR_PLL2R);
+		            STM32H5_PLL2DIVR_PLL2Q | STM32H5_PLL2DIVR_PLL2R);
       putreg32(regval, STM32H5_RCC_PLL2DIVR);
       
       /* PLL2FRACR */
@@ -1139,7 +1259,7 @@ void stm32h5_stdclockconfig(void)
       /* Set RGE, FRACEN, VCOSEL, and M from board.h */
 
       regval |= (STM32H5_PLL3CFGR_PLL3RGE | STM32H5_PLL3CFGR_PLL3FRACEN | 
-		 STM32H5_PLL3CFGR_PLL3VCOSEL | STM32H5_PLL3CFGR_PLL3M);
+		             STM32H5_PLL3CFGR_PLL3VCOSEL | STM32H5_PLL3CFGR_PLL3M);
 
 #ifdef STM32H5_PLL3CFGR_PLL3P_ENABLED
       regval |= RCC_PLL3CFGR_PLL3PEN;
@@ -1161,7 +1281,7 @@ void stm32h5_stdclockconfig(void)
 
       regval  = getreg32(STM32H5_RCC_PLL3DIVR);
       regval = (STM32H5_PLL3DIVR_PLL3N | STM32H5_PLL3DIVR_PLL3P | 
-		STM32H5_PLL3DIVR_PLL3Q | STM32H5_PLL3DIVR_PLL3R);
+		            STM32H5_PLL3DIVR_PLL3Q | STM32H5_PLL3DIVR_PLL3R);
       putreg32(regval, STM32H5_RCC_PLL3DIVR);
       
       /* PLL3FRACR */
@@ -1181,14 +1301,13 @@ void stm32h5_stdclockconfig(void)
       while ((getreg32(STM32H5_RCC_CR) & RCC_CR_PLL3RDY) == 0)
         {
         }
-
-      /* 250 MHz SYSCLK. VOS0 = 1.30V to 1.40V
-       * Enable FLASH 5 wait states 
-       * See Table 44. in Reference Manual
+ 
+    
+      /* Determine wait states based on sysclk frequency and VOS
+       * Determine WRHIGHFREQ based on wait states
        */
-
-      regval = FLASH_ACR_LATENCY_5;
-      putreg32(regval, STM32H5_FLASH_ACR);
+     
+      rcc_set_flash_latency();
 
       /* Select the main PLL as system clock source */
 
