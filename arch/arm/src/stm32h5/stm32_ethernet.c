@@ -56,7 +56,8 @@
 #include "arm_internal.h"
 #include "barriers.h"
 
-#include "hardware/stm32_syscfg.h"
+// #include "hardware/stm32_syscfg.h"
+#include "hardware/stm32_sbs.h"
 #include "hardware/stm32_pinmap.h"
 #include "stm32_gpio.h"
 #include "stm32_rcc.h"
@@ -228,7 +229,7 @@
  * The TX and RX descriptors are 16 bytes in size
  */
 
-#define DMA_BUFFER_MASK    (ARMV7M_DCACHE_LINESIZE - 1)
+#define DMA_BUFFER_MASK    (ARMV8M_DCACHE_LINESIZE - 1)
 #define DMA_ALIGN_UP(n)    (((n) + DMA_BUFFER_MASK) & ~DMA_BUFFER_MASK)
 #define DMA_ALIGN_DOWN(n)  ((n) & ~DMA_BUFFER_MASK)
 
@@ -655,16 +656,16 @@ struct stm32_ethmac_s
 /* Descriptor allocations */
 
 static union stm32_desc_u g_rxtable[RXTABLE_SIZE]
-aligned_data(ARMV7M_DCACHE_LINESIZE);
+aligned_data(ARMV8M_DCACHE_LINESIZE);
 static union stm32_desc_u g_txtable[TXTABLE_SIZE]
-aligned_data(ARMV7M_DCACHE_LINESIZE);
+aligned_data(ARMV8M_DCACHE_LINESIZE);
 
 /* Buffer allocations */
 
 static uint8_t g_rxbuffer[RXBUFFER_ALLOC]
-aligned_data(ARMV7M_DCACHE_LINESIZE);
+aligned_data(ARMV8M_DCACHE_LINESIZE);
 static uint8_t g_txbuffer[TXBUFFER_ALLOC]
-aligned_data(ARMV7M_DCACHE_LINESIZE);
+aligned_data(ARMV8M_DCACHE_LINESIZE);
 
 /* These are the pre-allocated Ethernet device structures */
 
@@ -3545,14 +3546,15 @@ static int stm32_phyinit(struct stm32_ethmac_s *priv)
  ****************************************************************************/
 
 #ifdef CONFIG_STM32H5_MII
+#pragma message "If TrustZone is enabled, MII will fail to select."
 static inline void stm32_selectmii(void)
 {
   uint32_t regval;
 
-  regval  = getreg32(STM32_SYSCFG_PMC);
-  regval &= ~SYSCFG_PMC_EPIS_MASK;
-  regval |= SYSCFG_PMC_EPIS_MII;
-  putreg32(regval, STM32_SYSCFG_PMC);
+  regval = getreg32(STM32_SBS_PMCR);
+  regval &= ~SBS_PMCR_ETH_SEL_PHY_MASK;
+  regval |= SBS_PMCR_ETH_SEL_PHY_GMII_OR_MII;
+  putreg32(regval, STM32_SBS_PMCR);
 }
 #endif
 
@@ -3571,14 +3573,15 @@ static inline void stm32_selectmii(void)
  ****************************************************************************/
 
 #ifdef CONFIG_STM32H5_RMII
+#pragma message "If TrustZone is enabled, RMII will fail to select."
 static inline void stm32_selectrmii(void)
 {
   uint32_t regval;
 
-  regval  = getreg32(STM32_SYSCFG_PMC);
-  regval &= ~SYSCFG_PMC_EPIS_MASK;
-  regval |= SYSCFG_PMC_EPIS_RMII;
-  putreg32(regval, STM32_SYSCFG_PMC);
+  regval = getreg32(STM32_SBS_PMCR);
+  regval &= ~SBS_PMCR_ETH_SEL_PHY_MASK;
+  regval |= SBS_PMCR_ETH_SEL_PHY_RMII;
+  putreg32(regval, STM32_SBS_PMCR);
 }
 #endif
 
@@ -3758,10 +3761,10 @@ static void stm32_ethreset(struct stm32_ethmac_s *priv)
   /* Reset the Ethernet on the AHB1 bus */
 
   regval  = stm32_getreg(STM32_RCC_AHB1RSTR);
-  regval |= RCC_AHB1RSTR_ETH1MACRST;
+  regval |= RCC_AHB1RSTR_ETHRST;
   stm32_putreg(regval, STM32_RCC_AHB1RSTR);
 
-  regval &= ~RCC_AHB1RSTR_ETH1MACRST;
+  regval &= ~RCC_AHB1RSTR_ETHRST;
   stm32_putreg(regval, STM32_RCC_AHB1RSTR);
 
   /* Perform a software reset by setting the SR bit in the DMAMR register.
