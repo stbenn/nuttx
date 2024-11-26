@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/stm32h7/hardware/stm32h7x3xx_spi.h
+ * arch/arm/src/stm32h5/hardware/stm32h5xxx_spi.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -27,7 +27,7 @@
 
 #include <nuttx/config.h>
 
-#if defined(CONFIG_STM32H5_STM32H5XXX)
+#if defined(CONFIG_STM32H5_STM32H5XXXX)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -35,7 +35,7 @@
 
 /* Maximum allowed speed as per data sheet for all SPIs */
 
-#  define STM32_SPI_CLK_MAX      150000000UL
+#  define STM32_SPI_CLK_MAX      125000000UL
 
 /* Register Offsets *********************************************************/
 

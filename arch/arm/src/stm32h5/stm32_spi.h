@@ -30,7 +30,7 @@
 #include <stdbool.h>
 
 #include "chip.h"
-#include "hardware/stm32_spi.h"
+#include "hardware/stm32h5xxx_spi.h"
 
 #ifndef __ASSEMBLY__
 
