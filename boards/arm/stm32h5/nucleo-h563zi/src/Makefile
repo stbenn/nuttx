@@ -43,4 +43,8 @@ ifeq ($(CONFIG_ADC),y)
 CSRCS += stm32_adc.c
 endif
 
+# ifeq ($(CONFIG_USBDEV),y)
+CSRCS += stm32_usbdev.c
+# endif
+
 include $(TOPDIR)/boards/Board.mk

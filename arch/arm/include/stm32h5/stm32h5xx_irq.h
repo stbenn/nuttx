@@ -121,7 +121,7 @@
 #  define STM32_IRQ_TIM16         (STM32_IRQ_FIRST + 72)  /* 72:  TIM16 global interrupt */
 #  define STM32_IRQ_TIM17         (STM32_IRQ_FIRST + 73)  /* 73:  TIM17 global interrupt */
 #endif
-#  define STM32_IRQ_USB_FS        (STM32_IRQ_FIRST + 74)  /* 74:  USB_FS global interrupt */
+#  define STM32_IRQ_USB           (STM32_IRQ_FIRST + 74)  /* 74:  USB_FS global interrupt */
 #  define STM32_IRQ_CRS           (STM32_IRQ_FIRST + 75)  /* 75:  CRS global interrupt */
 #  define STM32_IRQ_UCPD1         (STM32_IRQ_FIRST + 76)  /* 76:  UCPD1 global interrupt */
 #  define STM32_IRQ_FMC           (STM32_IRQ_FIRST + 77)  /* 77:  FMC global interrupt */

@@ -386,9 +386,14 @@ config STM32H5_LPUART1
 	select ARCH_HAVE_SERIAL_TERMIOS
 	select STM32H5_USART
 
+config STM32H5_USB
+	bool "USB Device"
+	default n
+	select USBDEV
+
 config STM32H5_I2C
-		bool
-		default n
+	bool
+	default n
 
 config STM32H5_I2C1
 	bool "I2C1"
