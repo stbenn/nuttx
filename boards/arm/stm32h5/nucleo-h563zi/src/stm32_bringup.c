@@ -102,6 +102,14 @@ int stm32_bringup(void)
 #endif
 #endif /* CONFIG_INPUT_BUTTONS */
 
+#ifdef CONFIG_ADC
+  ret = stm32_adc_setup();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_adc_setup failed: %d\n", ret);
+    }
+#endif /* CONFIG_ADC*/
+
   UNUSED(ret);
   return OK;
 }

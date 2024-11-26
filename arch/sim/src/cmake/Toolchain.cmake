@@ -87,7 +87,7 @@ if(CONFIG_STACK_USAGE_WARNING)
 endif()
 
 if(CONFIG_COVERAGE_ALL)
-  add_compile_options(-fprofile-generate -ftest-coverage)
+  add_compile_options(-fprofile-arcs -ftest-coverage -fno-inline)
 endif()
 
 if(CONFIG_PROFILE_ALL OR CONFIG_SIM_PROFILE)
@@ -179,6 +179,9 @@ endif()
 if(CONFIG_SIM_M32)
   add_compile_options(-m32)
   add_link_options(-m32)
+elseif(NOT CONFIG_HOST_MACOS)
+  add_compile_options(-no-pie)
+  add_link_options(-Wl,-no-pie)
 endif()
 
 if(CONFIG_LIBCXX)

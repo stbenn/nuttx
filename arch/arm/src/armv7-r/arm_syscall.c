@@ -156,25 +156,25 @@ static void dispatch_syscall(void)
 
 uint32_t *arm_syscall(uint32_t *regs)
 {
-  struct tcb_s *tcb = this_task();
-
+  struct tcb_s **running_task = &g_running_tasks[this_cpu()];
+  FAR struct tcb_s *tcb = this_task();
   uint32_t cmd;
-  int cpu;
 #ifdef CONFIG_BUILD_PROTECTED
   uint32_t cpsr;
 #endif
 
   /* Nested interrupts are not supported */
 
-  DEBUGASSERT(up_current_regs() == NULL);
+  DEBUGASSERT(!up_interrupt_context());
 
-  tcb->xcp.regs = regs;
+  if (*running_task != NULL)
+    {
+      (*running_task)->xcp.regs = regs;
+    }
 
-  /* Current regs non-zero indicates that we are processing an interrupt;
-   * current_regs is also used to manage interrupt level context switches.
-   */
+  /* Set irq flag */
 
-  up_set_current_regs(regs);
+  up_set_interrupt_context(true);
 
   /* The SYSCALL command is in R0 on entry.  Parameters follow in R1..R7 */
 
@@ -272,7 +272,7 @@ uint32_t *arm_syscall(uint32_t *regs)
            */
 
           tcb->xcp.regs = (uint32_t *)regs[REG_R1];
-          DEBUGASSERT(up_current_regs());
+          DEBUGASSERT(up_interrupt_context());
         }
         break;
 
@@ -294,11 +294,6 @@ uint32_t *arm_syscall(uint32_t *regs)
        */
 
       case SYS_switch_context:
-        {
-          DEBUGASSERT(regs[REG_R1] != 0 && regs[REG_R2] != 0);
-          *(uint32_t **)regs[REG_R1] = regs;
-          tcb->xcp.regs = (uint32_t *)regs[REG_R2];
-        }
         break;
 
       /* R0=SYS_task_start:  This a user task start
@@ -564,24 +559,22 @@ uint32_t *arm_syscall(uint32_t *regs)
         break;
     }
 
-  if (regs != tcb->xcp.regs)
+  if (*running_task != tcb)
     {
-      cpu = this_cpu();
-
       /* Update scheduler parameters */
 
-      nxsched_suspend_scheduler(g_running_tasks[cpu]);
+      nxsched_suspend_scheduler(*running_task);
       nxsched_resume_scheduler(tcb);
 
       /* Record the new "running" task.  g_running_tasks[] is only used by
        * assertion logic for reporting crashes.
        */
 
-      g_running_tasks[cpu] = tcb;
+      *running_task = tcb;
 
       /* Restore the cpu lock */
 
-      restore_critical_section(tcb, cpu);
+      restore_critical_section(tcb, this_cpu());
       regs = tcb->xcp.regs;
     }
 
@@ -589,11 +582,9 @@ uint32_t *arm_syscall(uint32_t *regs)
 
   dump_syscall("Exit", cmd, regs);
 
-  /* Set current_regs to NULL to indicate that we are no longer in an
-   * interrupt handler.
-   */
+  /* Set irq flag */
 
-  up_set_current_regs(NULL);
+  up_set_interrupt_context(false);
 
   /* Return the last value of curent_regs.  This supports context switches
    * on return from the exception.  That capability is only used with the

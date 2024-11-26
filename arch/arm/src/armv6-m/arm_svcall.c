@@ -92,7 +92,7 @@ static void dispatch_syscall(void)
     " ldr r4, =g_stublookup\n"                      /* R4=The base of the stub lookup table */
     " lsl r0, r0, #2\n"                             /* R0=Offset of the stub for this syscall */
     " ldr r4, [r4, r0]\n"                           /* R4=Address of the stub for this syscall */
-    " blx r5\n"                                     /* Call the stub (modifies lr) */
+    " blx r4\n"                                     /* Call the stub (modifies lr) */
     " mov lr, r5\n"                                 /* Restore lr */
     " add sp, sp, #12\n"                            /* Destroy the stack frame */
     " pop {r4, r5}\n"                               /* Recover R4 and R5 */
@@ -119,6 +119,7 @@ int arm_svcall(int irq, void *context, void *arg)
 {
   struct tcb_s *tcb = this_task();
   uint32_t *regs = (uint32_t *)context;
+  uint32_t *new_regs = regs;
   uint32_t cmd;
 
   cmd = regs[REG_R0];
@@ -157,16 +158,12 @@ int arm_svcall(int irq, void *context, void *arg)
        *
        *   R0 = SYS_restore_context
        *   R1 = restoreregs
-       *
-       * In this case, we simply need to set current_regs to restore register
-       * area referenced in the saved R1. context == current_regs is the
-       * normal exception return.  By setting current_regs = context[R1], we
-       * force the return to the saved context referenced in R1.
        */
 
       case SYS_restore_context:
         {
           DEBUGASSERT(regs[REG_R1] != 0);
+          new_regs = (uint32_t *)regs[REG_R1];
           tcb->xcp.regs = (uint32_t *)regs[REG_R1];
         }
         break;
@@ -181,18 +178,12 @@ int arm_svcall(int irq, void *context, void *arg)
        *   R0 = SYS_switch_context
        *   R1 = saveregs
        *   R2 = restoreregs
-       *
-       * In this case, we do both: We save the context registers to the save
-       * register area reference by the saved contents of R1 and then set
-       * current_regs to the save register area referenced by the saved
-       * contents of R2.
        */
 
       case SYS_switch_context:
         {
           DEBUGASSERT(regs[REG_R1] != 0 && regs[REG_R2] != 0);
-          *(uint32_t **)regs[REG_R1] = regs;
-          tcb->xcp.regs = (uint32_t *)regs[REG_R2];
+          new_regs = (uint32_t *)regs[REG_R2];
         }
         break;
 
@@ -446,12 +437,12 @@ int arm_svcall(int irq, void *context, void *arg)
    * switch.
    */
 
-  if (regs != tcb->xcp.regs)
+  if (regs != new_regs)
     {
       restore_critical_section(tcb, this_cpu());
 
 #ifdef CONFIG_DEBUG_SYSCALL_INFO
-      regs = (uint32_t *)tcb->xcp.regs;
+      regs = new_regs;
 
       svcinfo("SVCall Return:\n");
       svcinfo("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
