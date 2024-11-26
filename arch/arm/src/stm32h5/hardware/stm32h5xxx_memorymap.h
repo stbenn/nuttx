@@ -108,8 +108,8 @@
 
 /* APB2 Base Addresses ******************************************************/
 
-#define STM32_USB_FS_RAM_BASE 0x40016400
-#define STM32_USB_FS_BASE     0x40016000
+#define STM32_USBRAM_BASE     0x40016400
+#define STM32_USB_BASE        0x40016000
 #define STM32_SAI2_BASE       0x40015800
 #define STM32_SAI1_BASE       0x40015400
 #define STM32_SPI6_BASE       0x40015000

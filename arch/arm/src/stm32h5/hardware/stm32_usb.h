@@ -30,7 +30,7 @@
 #include <nuttx/config.h>
 #include <chip.h>
 
-#ifdef CONFIG_STM32H5_HAVE_USBDEV
+#ifdef CONFIG_STM32H5_USB
 
 /****************************************************************************
  * Pre-processor Definitions
