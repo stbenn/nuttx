@@ -33,9 +33,11 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Maximum allowed speed as per data sheet for all SPIs */
+/* Maximum allowed speed as per data sheet for all SPIs
+ * See Table 115 in DS14258 Rev 3
+*/
 
-#  define STM32_SPI_CLK_MAX      125000000UL
+#  define STM32_SPI_CLK_MAX      120000000UL
 
 /* Register Offsets *********************************************************/
 
