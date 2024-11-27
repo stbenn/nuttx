@@ -172,6 +172,14 @@ void __nxstart(void)
   acpi_init(g_acpi_rsdp);
 #endif
 
+#ifndef CONFIG_SMP
+  /* Revoke the lower memory if not SMP, otherwise this is done in
+   * x86_64_ap_boot() after the initialization of the last AP is finished.
+   */
+
+  __revoke_low_memory();
+#endif
+
   /* Initialize CPU data (BSP and APs) */
 
   x86_64_cpu_init();
@@ -189,10 +197,6 @@ void __nxstart(void)
   /* Configure timer */
 
   x86_64_timer_calibrate_freq();
-
-#ifdef CONFIG_LIB_SYSCALL
-  enable_syscall();
-#endif
 
   /* Store CPU IDs */
 
