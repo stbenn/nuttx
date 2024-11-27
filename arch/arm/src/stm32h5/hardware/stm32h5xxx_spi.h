@@ -35,7 +35,7 @@
 
 /* Maximum allowed speed as per data sheet for all SPIs
  * See Table 115 in DS14258 Rev 3
-*/
+ */
 
 #  define STM32_SPI_CLK_MAX      120000000UL
 
@@ -295,7 +295,6 @@
 #  define SPI_CFG1_MBR_FPCLKd256  (7 << SPI_CFG1_MBR_SHIFT)
 
 #define SPI_CFG1_BPASS            (1 << 31) /* Bit 31: Bypass the Prescaler at MBR */
-
 
 /* SPI configuration register 2 */
 

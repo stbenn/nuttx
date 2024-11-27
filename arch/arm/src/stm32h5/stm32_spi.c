@@ -1609,6 +1609,7 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev,
   struct stm32_spidev_s *priv = (struct stm32_spidev_s *)dev;
   uint32_t setbits = 0;
   uint32_t actual  = 0;
+  bool bypass  = false;
 
   /* Limit to max possible (if STM32_SPI_CLK_MAX is defined in board.h) */
 
@@ -1621,9 +1622,16 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev,
 
   if (frequency != priv->frequency)
     {
-      /* Choices are limited by PCLK frequency with a set of divisors */
+      /* Choices are limited by PCLK frequency
+       * Check bypass to see if we use the prescaler
+       */
 
-      if (frequency >= priv->spiclock >> 1)
+      if (frequency >= priv->spiclock)
+        {
+          actual = priv->spiclock;
+          bypass = true;
+        }
+      else if (frequency >= priv->spiclock >> 1)
         {
           /* More than fPCLK/2.  This is as fast as we can go */
 
@@ -1681,7 +1689,20 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev,
         }
 
       spi_enable(priv, false);
-      spi_modifyreg(priv, STM32_SPI_CFG1_OFFSET, SPI_CFG1_MBR_MASK, setbits);
+      if (bypass)
+        {
+          spi_modifyreg(priv,
+                        STM32_SPI_CFG1_OFFSET,
+                        SPI_CFG1_MBR_MASK,
+                        SPI_CFG1_BPASS);
+        }
+      else
+        {
+          spi_modifyreg(priv,
+                        STM32_SPI_CFG1_OFFSET,
+                        SPI_CFG1_MBR_MASK | SPI_CFG1_BPASS,
+                        setbits);
+        }
       spi_enable(priv, true);
 
       /* Save the frequency selection so that subsequent reconfigurations
