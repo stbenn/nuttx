@@ -73,6 +73,7 @@
 #define CANWORK LPWORK
 
 /* Clock source *************************************************************/
+/* TODO - See stm32_fdcan.c */
 
 #define FDCANCLK_PDIV              (0)
 
@@ -91,7 +92,6 @@
 #  define FDCAN_MSGRAM_WORDS         (212)
 #  define STM32_CANRAM1_BASE         (STM32_CANRAM_BASE + 0x0000)
 #  define STM32_CANRAM2_BASE         (STM32_CANRAM_BASE + 1*(FDCAN_MSGRAM_WORDS * 4) + 4)
-#  define STM32_CANRAM3_BASE         (STM32_CANRAM_BASE + 2*(FDCAN_MSGRAM_WORDS * 4) + 4)
 
 #  ifdef CONFIG_STM32_FDCAN1
 #    define FDCAN1_STDFILTER_SIZE    (28)
@@ -122,21 +122,6 @@
 #    define FDCAN2_RXFIFO1_WORDS     (54)
 #    define FDCAN2_TXEVENTFIFO_WORDS (6)
 #    define FDCAN2_TXFIFIOQ_WORDS    (54)
-#  endif
-#  ifdef CONFIG_STM32_FDCAN3
-#    define FDCAN3_STDFILTER_SIZE    (28)
-#    define FDCAN3_EXTFILTER_SIZE    (8)
-#    define FDCAN3_RXFIFO0_SIZE      (3)
-#    define FDCAN3_RXFIFO1_SIZE      (3)
-#    define FDCAN3_TXEVENTFIFO_SIZE  (3)
-#    define FDCAN3_TXFIFIOQ_SIZE     (3)
-
-#    define FDCAN3_STDFILTER_WORDS   (28)
-#    define FDCAN3_EXTFILTER_WORDS   (16)
-#    define FDCAN3_RXFIFO0_WORDS     (54)
-#    define FDCAN3_RXFIFO1_WORDS     (54)
-#    define FDCAN3_TXEVENTFIFO_WORDS (6)
-#    define FDCAN3_TXFIFIOQ_WORDS    (54)
 #  endif
 #else
 #  error
@@ -276,79 +261,11 @@
 
 #endif /* CONFIG_STM32_FDCAN2 */
 
-/* FDCAN3 Configuration *****************************************************/
-
-#ifdef CONFIG_STM32_FDCAN3
-
-/* Bit timing */
-
-#  define FDCAN3_NTSEG1  (CONFIG_STM32_FDCAN3_NTSEG1 - 1)
-#  define FDCAN3_NTSEG2  (CONFIG_STM32_FDCAN3_NTSEG2 - 1)
-#  define FDCAN3_NBRP    (((STM32_FDCANCLK_FREQUENCY /              \
-                            ((FDCAN3_NTSEG1 + FDCAN3_NTSEG2 + 3) *  \
-                             CONFIG_STM32_FDCAN3_BITRATE)) - 1))
-#  define FDCAN3_NSJW    (CONFIG_STM32_FDCAN3_NSJW - 1)
-
-#  if FDCAN3_NTSEG1 > FDCAN_NBTP_NTSEG1_MAX
-#    error Invalid FDCAN3 NTSEG1
-#  endif
-#  if FDCAN3_NTSEG2 > FDCAN_NBTP_NTSEG2_MAX
-#    error Invalid FDCAN3 NTSEG2
-#  endif
-#  if FDCAN3_NSJW > FDCAN_NBTP_NSJW_MAX
-#    error Invalid FDCAN3 NSJW
-#  endif
-#  if FDCAN3_NBRP > FDCAN_NBTP_NBRP_MAX
-#    error Invalid FDCAN1 NBRP
-#  endif
-
-#  ifdef CONFIG_STM32_FDCAN3_FD_BRS
-#    define FDCAN3_DTSEG1 (CONFIG_STM32_FDCAN3_DTSEG1 - 1)
-#    define FDCAN3_DTSEG2 (CONFIG_STM32_FDCAN3_DTSEG2 - 1)
-#    define FDCAN3_DBRP   (((STM32_FDCANCLK_FREQUENCY /                 \
-                             ((FDCAN3_DTSEG1 + FDCAN3_DTSEG2 + 3) *     \
-                              CONFIG_STM32_FDCAN3_DBITRATE)) - 1))
-#    define FDCAN3_DSJW   (CONFIG_STM32_FDCAN3_DSJW - 1)
-#  else
-#    define FDCAN3_DTSEG1 1
-#    define FDCAN3_DTSEG2 1
-#    define FDCAN3_DBRP   1
-#    define FDCAN3_DSJW   1
-#  endif /* CONFIG_STM32_FDCAN3_FD_BRS */
-
-#  if FDCAN3_DTSEG1 > FDCAN_DBTP_DTSEG1_MAX
-#    error Invalid FDCAN3 DTSEG1
-#  endif
-#  if FDCAN3_DTSEG2 > FDCAN_DBTP_DTSEG2_MAX
-#    error Invalid FDCAN3 DTSEG2
-#  endif
-#  if FDCAN3_DBRP > FDCAN_DBTP_DBRP_MAX
-#    error Invalid FDCAN3 DBRP
-#  endif
-#  if FDCAN3_DSJW > FDCAN_DBTP_DSJW_MAX
-#    error Invalid FDCAN3 DSJW
-#  endif
-
-/* FDCAN3 Message RAM Configuration *****************************************/
-
-/* FDCAN3 Message RAM Layout */
-
-#  define FDCAN3_STDFILTER_INDEX   0
-#  define FDCAN3_EXTFILTERS_INDEX  (FDCAN3_STDFILTER_INDEX + FDCAN3_STDFILTER_WORDS)
-#  define FDCAN3_RXFIFO0_INDEX     (FDCAN3_EXTFILTERS_INDEX + FDCAN3_EXTFILTER_WORDS)
-#  define FDCAN3_RXFIFO1_INDEX     (FDCAN3_RXFIFO0_INDEX + FDCAN3_RXFIFO0_WORDS)
-#  define FDCAN3_TXEVENTFIFO_INDEX (FDCAN3_RXFIFO1_INDEX + FDCAN3_RXFIFO1_WORDS)
-#  define FDCAN3_TXFIFOQ_INDEX     (FDCAN3_TXEVENTFIFO_INDEX + FDCAN3_TXEVENTFIFO_WORDS)
-#  define FDCAN3_MSGRAM_WORDS      (FDCAN3_TXFIFOQ_INDEX + FDCAN3_TXFIFIOQ_WORDS)
-
-#endif /* CONFIG_STM32_FDCAN3 */
-
 /* Loopback mode */
 
 #undef STM32_FDCAN_LOOPBACK
 #if defined(CONFIG_STM32_FDCAN1_LOOPBACK) ||   \
-    defined(CONFIG_STM32_FDCAN2_LOOPBACK) ||   \
-    defined(CONFIG_STM32_FDCAN3_LOOPBACK)
+    defined(CONFIG_STM32_FDCAN2_LOOPBACK)
 #  define STM32_FDCAN_LOOPBACK 1
 #endif
 
@@ -790,74 +707,6 @@ static const struct stm32_config_s g_fdcan2const =
 static struct stm32_fdcan_s g_fdcan2priv;
 
 #endif /* CONFIG_STM32_FDCAN2 */
-
-#ifdef CONFIG_STM32_FDCAN3
-/* FDCAN3 message RAM allocation */
-
-/* FDCAN3 constant configuration */
-
-static const struct stm32_config_s g_fdcan3const =
-{
-  .rxpinset         = GPIO_FDCAN3_RX,
-  .txpinset         = GPIO_FDCAN3_TX,
-  .base             = STM32_FDCAN3_BASE,
-  .baud             = CONFIG_STM32_FDCAN3_BITRATE,
-  .nbtp             = FDCAN_NBTP_NBRP(FDCAN3_NBRP) |
-                      FDCAN_NBTP_NTSEG1(FDCAN3_NTSEG1) |
-                      FDCAN_NBTP_NTSEG2(FDCAN3_NTSEG2) |
-                      FDCAN_NBTP_NSJW(FDCAN3_NSJW),
-  .dbtp             = FDCAN_DBTP_DBRP(FDCAN3_DBRP) |
-                      FDCAN_DBTP_DTSEG1(FDCAN3_DTSEG1) |
-                      FDCAN_DBTP_DTSEG2(FDCAN3_DTSEG2) |
-                      FDCAN_DBTP_DSJW(FDCAN3_DSJW),
-  .port             = 3,
-  .irq0             = STM32_IRQ_FDCAN3_0,
-  .irq1             = STM32_IRQ_FDCAN3_1,
-#if defined(CONFIG_STM32_FDCAN3_CLASSIC)
-  .mode             = FDCAN_CLASSIC_MODE,
-#elif defined(CONFIG_STM32_FDCAN3_FD)
-  .mode             = FDCAN_FD_MODE,
-#else
-  .mode             = FDCAN_FD_BRS_MODE,
-#endif
-#if defined(CONFIG_STM32_FDCAN3_NONISO_FORMAT)
-  .format           = FDCAN_NONISO_BOSCH_V1_FORMAT,
-#else
-  .format           = FDCAN_ISO11898_1_FORMAT,
-#endif
-  .nstdfilters      = FDCAN3_STDFILTER_SIZE,
-  .nextfilters      = FDCAN3_EXTFILTER_SIZE,
-  .nrxfifo0         = FDCAN3_RXFIFO0_SIZE,
-  .nrxfifo1         = FDCAN3_RXFIFO1_SIZE,
-  .ntxeventfifo     = FDCAN3_TXEVENTFIFO_SIZE,
-  .ntxfifoq         = FDCAN3_TXFIFIOQ_SIZE,
-  .rxfifo0esize     = (FDCAN3_RXFIFO0_WORDS / FDCAN3_RXFIFO0_SIZE),
-  .rxfifo1esize     = (FDCAN3_RXFIFO1_WORDS / FDCAN3_RXFIFO1_SIZE),
-  .txeventesize     = (FDCAN3_TXEVENTFIFO_WORDS / FDCAN3_TXEVENTFIFO_SIZE),
-  .txbufferesize    = (FDCAN3_TXFIFIOQ_WORDS / FDCAN3_TXFIFIOQ_SIZE),
-
-#ifdef CONFIG_STM32_FDCAN3_LOOPBACK
-  .loopback         = true,
-#endif
-
-  /* FDCAN3 Message RAM */
-
-  .msgram =
-  {
-    (uint32_t *)(STM32_CANRAM3_BASE + (FDCAN3_STDFILTER_INDEX << 2)),
-    (uint32_t *)(STM32_CANRAM3_BASE + (FDCAN3_EXTFILTERS_INDEX << 2)),
-    (uint32_t *)(STM32_CANRAM3_BASE + (FDCAN3_RXFIFO0_INDEX << 2)),
-    (uint32_t *)(STM32_CANRAM3_BASE + (FDCAN3_RXFIFO1_INDEX << 2)),
-    (uint32_t *)(STM32_CANRAM3_BASE + (FDCAN3_TXEVENTFIFO_INDEX << 2)),
-    (uint32_t *)(STM32_CANRAM3_BASE + (FDCAN3_TXFIFOQ_INDEX << 2))
-  }
-};
-
-/* FDCAN3 variable driver state */
-
-static struct stm32_fdcan_s g_fdcan3priv;
-
-#endif /* CONFIG_STM32_FDCAN3 */
 
 /****************************************************************************
  * Private Functions
@@ -3239,16 +3088,6 @@ int stm32_fdcansockinitialize(int port)
     }
   else
 #endif
-#ifdef CONFIG_STM32_FDCAN3
-  if (port == FDCAN3)
-    {
-      /* Select the FDCAN3 device structure */
-
-      priv   = &g_fdcan3priv;
-      config = &g_fdcan3const;
-    }
-  else
-#endif
     {
       nerr("ERROR: Unsupported port %d\n", port);
       ret = -EINVAL;
@@ -3313,10 +3152,6 @@ void arm_netinitialize(void)
 
 #ifdef CONFIG_STM32_CAN2
   stm32_fdcansockinitialize(FDCAN2);
-#endif
-
-#ifdef CONFIG_STM32_CAN3
-  stm32_fdcansockinitialize(FDCAN3);
 #endif
 }
 #endif
