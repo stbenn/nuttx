@@ -48,6 +48,7 @@ config STM32H5_STM32H56XXX
 	select STM32H5_HAVE_USART10
 	select STM32H5_HAVE_USART11
 	select STM32H5_HAVE_UART12
+	select STM32H5_HAVE_HSI48
 
 config STM32H5_STM32H563XX
 	# STM32H552 and STM32H562 devices documented in RM0439
@@ -256,6 +257,10 @@ config STM32H5_HAVE_USART11
 	default n
 
 config STM32H5_HAVE_UART12
+	bool
+	default n
+
+config STM32H5_HAVE_HSI48
 	bool
 	default n
 

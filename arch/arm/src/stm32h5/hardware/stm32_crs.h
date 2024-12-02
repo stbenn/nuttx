@@ -50,16 +50,16 @@
 #define CRS_CR_CEN                 (1 << 5)  /* Bit 5: Frequency error counter enable */
 #define CRS_CR_AUTOTRIMEN          (1 << 6)  /* Bit 6: Automatic trimming enabled */
 #define CRS_CR_SWSYNC              (1 << 7)  /* Bit 7: Generate software SYNC event */
-#define CRS_CR_TRIM_SHIFT          8         /* Bits 8-13: HSI48 oscillator smooth trimming */
+#define CRS_CR_TRIM_SHIFT          (8)       /* Bits 8-13: HSI48 oscillator smooth trimming */
 #define CRS_CR_TRIM_MASK           (0x3f << CRS_CR_TRIM_SHIFT)
 
 /* CRS configuration register */
 
-#define CRS_CFGR_RELOAD_SHIFT      0         /* Bits 0-15: Counter reload value */
+#define CRS_CFGR_RELOAD_SHIFT      (0)         /* Bits 0-15: Counter reload value */
 #define CRS_CFGR_RELOAD_MASK       (0xffff << CRS_CFGR_RELOAD_SHIFT)
-#define CRS_CFGR_FELIM_SHIFT       16        /* Bits 16-23: Frequency error limit */
+#define CRS_CFGR_FELIM_SHIFT       (16)        /* Bits 16-23: Frequency error limit */
 #define CRS_CFGR_FELIM_MASK        (0xff << CRS_CFGR_FELIM_SHIFT)
-#define CRS_CFGR_SYNCDIV_SHIFT     24        /* Bits 24-26: SYNC divider */
+#define CRS_CFGR_SYNCDIV_SHIFT     (24)        /* Bits 24-26: SYNC divider */
 #define CRS_CFGR_SYNCDIV_MASK      (7 << CRS_CFGR_SYNCDIV_SHIFT)
 #  define CRS_CFGR_SYNCDIV_d1      (0 << CRS_CFGR_SYNCDIV_SHIFT) /* Not divided */
 #  define CRS_CFGR_SYNCDIV_d2      (1 << CRS_CFGR_SYNCDIV_SHIFT) /* divided by 2 */
@@ -70,7 +70,7 @@
 #  define CRS_CFGR_SYNCDIV_d64     (6 << CRS_CFGR_SYNCDIV_SHIFT) /* divided by 64 */
 #  define CRS_CFGR_SYNCDIV_d128    (7 << CRS_CFGR_SYNCDIV_SHIFT) /* divided by 128 */
 
-#define CRS_CFGR_SYNCSRC_SHIFT     28        /* Bits 28-29: SYNC signal source selection */
+#define CRS_CFGR_SYNCSRC_SHIFT     (28)        /* Bits 28-29: SYNC signal source selection */
 #define CRS_CFGR_SYNCSRC_MASK      (3 << CRS_CFGR_SYNCSRC_SHIFT)
 #  define CRS_CFGR_SYNCSRC_GPIO    (0 << CRS_CFGR_SYNCSRC_SHIFT) /* GPIO as SYNC signal source */
 #  define CRS_CFGR_SYNCSRC_LSE     (1 << CRS_CFGR_SYNCSRC_SHIFT) /* LSE as SYNC signal source */
@@ -88,7 +88,7 @@
 #define CRS_ISR_SYNCMISS           (1 << 9)  /* Bit 9: SYNC missed */
 #define CRS_ISR_TRIMOVF            (1 << 10) /* Bit 10: Trimming overflow or underflow */
 #define CRS_ISR_FEDIR              (1 << 15) /* Bit 15: Frequency error direction */
-#define CRS_ISR_FECAP_SHIFT        16        /* Bits 16-31: Frequency error capture */
+#define CRS_ISR_FECAP_SHIFT        (16)      /* Bits 16-31: Frequency error capture */
 #define CRS_ISR_FECAP_MASK         (0xffff << CRS_ISR_FECAP_SHIFT)
 
 /* CRS interrupt flag clear register */

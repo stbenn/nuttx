@@ -57,3 +57,7 @@ endif
 ifeq ($(CONFIG_STM32H5_STM32H5XXXX),y)
 CHIP_CSRCS += stm32h5xx_rcc.c
 endif
+
+ifeq ($(CONFIG_STM32H5_HAVE_HSI48),y)
+CHIP_CSRCS += stm32_hsi48.c
+endif
