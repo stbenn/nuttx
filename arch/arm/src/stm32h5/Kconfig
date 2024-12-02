@@ -35,6 +35,8 @@ config STM32H5_STM32H5XXXX
 config STM32H5_STM32H56XXX
 	bool
 	default n
+	select STM32H5_HAVE_FDCAN1
+	select STM32H5_HAVE_FDCAN2
 	select STM32H5_HAVE_LPUART1
 	select STM32H5_HAVE_USART1
 	select STM32H5_HAVE_USART2
@@ -207,6 +209,14 @@ config STM32H5_HAVE_PHY_POLLED
 	bool
 	default n
 
+config STM32H5_HAVE_FDCAN1
+	bool
+	default n
+
+config STM32H5_HAVE_FDCAN2
+	bool
+	default n
+
 config STM32H5_HAVE_LPUART1
 	bool
 	default n
@@ -267,8 +277,12 @@ config STM32H5_USART
 	default n
 
 config STM32H5_ADC
-  bool
-  default n
+        bool
+        default n
+
+config STM32_FDCAN
+	bool
+	default n
 
 # These are the peripheral selections proper
 
@@ -289,6 +303,18 @@ config STM32H5_ETHMAC
 	select NETDEVICES
 	select ARCH_HAVE_PHY
 	select STM32H5_HAVE_PHY_POLLED
+
+config STM32H5_FDCAN1
+	bool "FDCAN1"
+	default n
+	depends on STM32H5_HAVE_FDCAN1
+	select STM32H5_FDCAN
+
+config STM32H5_FDCAN2
+	bool "FDCAN2"
+	default n
+	depends on STM32H5_HAVE_FDCAN2
+	select STM32H5_FDCAN
 
 config STM32H5_USART2
 	bool "USART2"
