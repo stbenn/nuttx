@@ -76,6 +76,12 @@
 #include "stm32_dma.h"
 #endif
 
+#if defined(CONFIG_STM32H5_STM32H50XXX)
+#  define SPI_MAX_KER_CK 250000000
+#else
+#  define SPI_MAX_KER_CK 125000000
+#endif
+
 #if defined(CONFIG_STM32H5_SPI1) || defined(CONFIG_STM32H5_SPI2) || \
     defined(CONFIG_STM32H5_SPI3) || defined(CONFIG_STM32H5_SPI4) || \
     defined(CONFIG_STM32H5_SPI5) || defined(CONFIG_STM32H5_SPI6)
@@ -195,7 +201,7 @@
 #  else
 #    error: Not a supported clock for SPI1
 #  endif
-#  if SPI1_KERNEL_CLOCK_FREQ > 125000000
+#  if SPI1_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
 #    error Not supported SPI1 frequency
 #  endif
 #endif /* SPI1 */
@@ -219,7 +225,7 @@
 #  else
 #    error: Not a supported clock for SPI2
 #  endif
-#  if SPI2_KERNEL_CLOCK_FREQ > 125000000
+#  if SPI2_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
 #    error Not supported SPI2 frequency
 #  endif
 #endif /* SPI2 */
@@ -243,7 +249,7 @@
 #  else
 #    error: Not a supported clock for SPI3
 #  endif
-#  if SPI3_KERNEL_CLOCK_FREQ > 125000000
+#  if SPI3_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
 #    error Not supported SPI3 frequency
 #  endif
 #endif /* SPI3 */
@@ -270,7 +276,7 @@
 #  else
 #    error Not supported yet
 #  endif
-#  if SPI4_KERNEL_CLOCK_FREQ > 125000000
+#  if SPI4_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
 #    error Not supported SPI4 frequency
 #  endif
 #endif /* SPI4 */
@@ -297,7 +303,7 @@
 #  else
 #    error Not supported yet
 #  endif
-#  if SPI5_KERNEL_CLOCK_FREQ > 125000000
+#  if SPI5_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
 #    error Not supported SPI5 frequency
 #  endif
 #endif /* SPI5 */
@@ -324,7 +330,7 @@
 #  else
 #    error Not supported yet
 #  endif
-#  if SPI6_KERNEL_CLOCK_FREQ > 125000000
+#  if SPI6_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
 #    error Not supported SPI6 frequency
 #  endif
 #endif /* SPI6 */

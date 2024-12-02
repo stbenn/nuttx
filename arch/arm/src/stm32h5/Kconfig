@@ -48,6 +48,7 @@ config STM32H5_STM32H56XXX
 	select STM32H5_HAVE_USART10
 	select STM32H5_HAVE_USART11
 	select STM32H5_HAVE_UART12
+	select STM32H5_HAVE_SPI4
 	select STM32H5_HAVE_SPI5
 	select STM32H5_HAVE_SPI6
 
@@ -444,6 +445,7 @@ config STM32H5_SPI3
 config STM32H5_SPI4
 	bool "SPI4"
 	default n
+	depends on STM32H5_HAVE_SPI4
 	select SPI
 	select STM32H5_SPI
 
