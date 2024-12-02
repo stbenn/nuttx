@@ -280,7 +280,7 @@ config STM32H5_ADC
         bool
         default n
 
-config STM32_FDCAN
+config STM32H5_FDCAN
 	bool
 	default n
 
@@ -1126,6 +1126,145 @@ config STM32H5_NO_PHY
 
 endmenu # Ethernet MAC Configuration
 
+menu "FDCAN Configuration"
+	depends on STM32H5_FDCAN
+
+menu "FDCAN Mode"
+
+menu "FDCAN1 Mode"
+	depends on STM32H5_FDCAN1
+choice
+	prompt "FDCAN1 Mode Selection"
+	default STM32H5_FDCAN1_CLASSIC
+
+config STM32H5_FDCAN1_CLASSIC
+	bool "Classic CAN"
+
+config STM32H5_FDCAN1_FD
+	bool "CAN FD"
+        select CAN_FD
+
+config STM32H5_FDCAN1_FD_BRS
+	bool "CAN FD with with bit rate switching"
+        select CAN_FD
+
+endchoice
+endmenu # "FDCAN1 Mode"
+menu "FDCAN2 Mode"
+	depends on STM32H5_FDCAN2
+
+choice
+	prompt "FDCAN2 Mode Selection"
+	default STM32H5_FDCAN2_CLASSIC
+
+config STM32H5_FDCAN2_CLASSIC
+	bool "Classic CAN"
+
+config STM32H5_FDCAN2_FD
+	bool "CAN FD"
+        select CAN_FD
+
+config STM32H5_FDCAN2_FD_BRS
+	bool "CAN FD with with bit rate switching"
+        select CAN_FD
+
+endchoice
+endmenu # "FDCAN2 Mode"
+endmenu # "FDCAN Mode"
+
+menu "FDCAN Kernel Clock Selection"
+
+choice
+	prompt "FDCAN Input Clock Selection"
+	default STM32H5_FDCAN_CLK_HSE
+
+config STM32H5_FDCAN_CLK_HSE
+	bool "HSE"
+
+config STM32H5_FDCAN_CLK_PLL1Q
+	bool "PLL1Q"
+
+config STM32H5_FDCAN_CLK_PLL2Q
+	bool "PLL2Q"
+
+endchoice # FDCAN Input Clock Selection
+
+endmenu # Clock Selection
+
+menu "FDCAN CFG Clock Divider"
+
+config STM32H5_FDCAN_PDIV_EN
+	bool "PDIV Enable"
+
+config STM32H5_FDCAN_PDIV_VALUE
+	int "PDIV Register Value: Val = (DIV >> 1)"
+	range 0 15
+	default 0
+	depends on STM32H5_FDCAN_PDIV_EN
+
+endmenu # FDCAN PDIV
+
+menu "FDCAN Bitrate"
+
+config STM32H5_FDCAN1_BITRATE
+	int "FDCAN1 Bitrate"
+	range 5000 1000000
+	default 0
+	depends on STM32H5_FDCAN1
+
+config STM32H5_FDCAN2_BITRATE
+	int "FDCAN2 Bitrate"
+	range 5000 1000000
+	default 0
+	depends on STM32H5_FDCAN2
+
+endmenu # FDCAN Bitrate
+
+menu "Nominal Bit Timing and Prescaler (NBTP)"
+
+menu "FDCAN1 NBTP"
+	depends on STM32H5_FDCAN1
+
+config STM32H5_FDCAN1_NTSEG1
+	int "FDCAN1 NTSEG1 Value"
+	range 1 256
+	default 1
+
+config STM32H5_FDCAN1_NTSEG2
+	int "FDCAN1 NTSEG2 Value"
+	range 1 256
+	default 1
+
+config STM32H5_FDCAN1_NSJW
+	int "FDCAN1 NSJW Value"
+	range 1 128
+	default 1
+
+endmenu # "FDCAN1 NBTP"
+
+menu "FDCAN2 NBTP"
+	depends on STM32H5_FDCAN2
+
+config STM32H5_FDCAN2_NTSEG1
+	int "FDCAN2 NTSEG1 Value"
+	range 1 256
+	default 1
+
+config STM32H5_FDCAN2_NTSEG2
+	int "FDCAN2 NTSEG2 Value"
+	range 1 256
+	default 1
+
+config STM32H5_FDCAN2_NSJW
+	int "FDCAN2 NSJW Value"
+	range 1 128
+	default 1
+
+endmenu # "FDCAN2 NBTP"
+
+endmenu # Nominal Bit Timing and Prescaler
+
+endmenu # FDCAN Configuration
 
 menu "I2C Configuration"
 	depends on STM32H5_I2C
