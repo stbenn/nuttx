@@ -1150,6 +1150,7 @@ config STM32H5_FDCAN1_FD_BRS
 
 endchoice
 endmenu # "FDCAN1 Mode"
+
 menu "FDCAN2 Mode"
 	depends on STM32H5_FDCAN2
 
@@ -1263,6 +1264,51 @@ config STM32H5_FDCAN2_NSJW
 endmenu # "FDCAN2 NBTP"
 
 endmenu # Nominal Bit Timing and Prescaler
+
+menu "Data Bit Timing and Prescaler (DBTP)"
+        depends on STM32H5_FDCAN1_FD_BRS || STM32H5_FDCAN2_FD_BRS
+
+menu "FDCAN1 DBTP"
+        depends on STM32H5_FDCAN1_FD_BRS
+
+config STM32H5_FDCAN1_DTSEG1
+	int "FDCAN1 DTSEG1 Value"
+	range 1 32
+	default 1
+
+config STM32H5_FDCAN1_DTSEG2
+	int "FDCAN1 DTSEG2 Value"
+	range 1 16
+	default 1
+
+config STM32H5_FDCAN1_DSJW
+	int "FDCAN1 DSJW Value"
+	range 1 16
+	default 1
+
+endmenu # "FDCAN1 DBTP"
+
+menu "FDCAN2 DBTP"
+        depends on STM32H5_FDCAN2_FD_BRS
+
+config STM32H5_FDCAN2_DTSEG1
+	int "FDCAN2 DTSEG1 Value"
+	range 1 32
+	default 1
+
+config STM32H5_FDCAN2_DTSEG2
+	int "FDCAN2 DTSEG2 Value"
+	range 1 16
+	default 1
+
+config STM32H5_FDCAN2_DSJW
+	int "FDCAN2 DSJW Value"
+	range 1 16
+	default 1
+
+endmenu # "FDCAN DBTP"
+
+endmenu # Data Bit Timing and Prescaler (DBTP)
 
 endmenu # FDCAN Configuration
 
