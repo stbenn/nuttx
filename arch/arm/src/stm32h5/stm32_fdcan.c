@@ -68,7 +68,11 @@
 #  define STM32_FDCAN_FREQUENCY STM32_HSE_FREQUENCY
 #endif
 
-#define FDCANCLK_PDIV              (0)
+#ifdef CONFIG_STM32H5_FDCAN_PDIV_EN
+#  define FDCANCLK_PDIV              CONFIG_STM32H5_FDCAN_PDIV_VALUE
+#else
+#  define FDCANCLK_PDIV              (0)
+#endif
 
 #if FDCANCLK_PDIV == 0
 #  define STM32_FDCANCLK_FREQUENCY (STM32_FDCAN_FREQUENCY / (1))
@@ -149,6 +153,11 @@
                             ((FDCAN1_DTSEG1 + FDCAN1_DTSEG2 + 3) * \
                              CONFIG_STM32H5_FDCAN1_DBITRATE)) - 1)
 #    define FDCAN1_DSJW   (CONFIG_STM32H5_FDCAN1_DSJW - 1)
+#  else
+#    define FDCAN1_DTSEG1 1
+#    define FDCAN1_DTSEG2 1
+#    define FDCAN1_DBRP   1
+#    define FDCAN1_DSJW   1
 #  endif /* CONFIG_STM32H5_FDCAN1_FD_BRS */
 
 #  if FDCAN1_DTSEG1 > FDCAN_DBTP_DTSEG1_MAX
@@ -211,6 +220,11 @@
                              ((FDCAN2_DTSEG1 + FDCAN2_DTSEG2 + 3) *     \
                               CONFIG_STM32H5_FDCAN2_DBITRATE)) - 1))
 #    define FDCAN2_DSJW   (CONFIG_STM32H5_FDCAN2_DSJW - 1)
+#  else
+#    define FDCAN2_DTSEG1 1
+#    define FDCAN2_DTSEG2 1
+#    define FDCAN2_DBRP   1
+#    define FDCAN2_DSJW   1
 #  endif /* CONFIG_STM32H5_FDCAN2_FD_BRS */
 
 #  if FDCAN2_DTSEG1 > FDCAN_DBTP_DTSEG1_MAX
@@ -1996,8 +2010,8 @@ static int fdcan_ioctl(struct can_dev_s *dev, int cmd, unsigned long arg)
 #ifdef CONFIG_CAN_FD
           if (bt->type == CAN_BITTIMING_DATA)
             {
-              priv->dbtp = FDCAN_NBTP_DBRP(nbrp) |
-                           FDCAN_NBTP_DTSEG1(ntseg1) |
+              priv->dbtp = FDCAN_DBTP_DBRP(nbrp) |
+                           FDCAN_DBTP_DTSEG1(ntseg1) |
                            FDCAN_DBTP_DTSEG2(ntseg2) |
                            FDCAN_DBTP_DSJW(nsjw);
             }

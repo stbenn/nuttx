@@ -1205,23 +1205,24 @@ config STM32H5_FDCAN_PDIV_VALUE
 
 endmenu # FDCAN PDIV
 
+
+menu "Nominal Bit Timing and Prescaler (NBTP)"
+
 menu "FDCAN Bitrate"
 
 config STM32H5_FDCAN1_BITRATE
 	int "FDCAN1 Bitrate"
 	range 5000 1000000
-	default 0
+	default 125000
 	depends on STM32H5_FDCAN1
 
 config STM32H5_FDCAN2_BITRATE
 	int "FDCAN2 Bitrate"
 	range 5000 1000000
-	default 0
+	default 125000
 	depends on STM32H5_FDCAN2
 
 endmenu # FDCAN Bitrate
-
-menu "Nominal Bit Timing and Prescaler (NBTP)"
 
 menu "FDCAN1 NBTP"
 	depends on STM32H5_FDCAN1
@@ -1267,6 +1268,22 @@ endmenu # Nominal Bit Timing and Prescaler
 
 menu "Data Bit Timing and Prescaler (DBTP)"
         depends on STM32H5_FDCAN1_FD_BRS || STM32H5_FDCAN2_FD_BRS
+
+menu "FDCAN Data Bitrate"
+
+config STM32H5_FDCAN1_DBITRATE
+	int "FDCAN1 Bitrate"
+	range 5000 1000000
+	default 125000
+	depends on STM32H5_FDCAN1
+
+config STM32H5_FDCAN2_DBITRATE
+	int "FDCAN2 Bitrate"
+	range 5000 1000000
+	default 125000
+	depends on STM32H5_FDCAN2
+
+endmenu # FDCAN Data Bitrate
 
 menu "FDCAN1 DBTP"
         depends on STM32H5_FDCAN1_FD_BRS
