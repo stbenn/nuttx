@@ -42,7 +42,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#define MY_USB_REG (0x40016000+0x58)
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -82,8 +82,22 @@ void stm32_usbinitialize(void)
 
 int stm32_usbpullup(struct usbdev_s *dev, bool enable)
 {
+  uint32_t regval;
   usbtrace(TRACE_DEVPULLUP, (uint16_t)enable);
-  // stm32_gpiowrite(GPIO_USB_PULLUP, !enable);
+
+  regval = getreg32(MY_USB_REG);
+
+  if(enable)
+    {
+      regval |= (1 << 15);
+    }
+  else
+    {
+      regval &= ~(1 << 15);
+    }
+
+  putreg32(regval, MY_USB_REG);
+
   return OK;
 }
 
