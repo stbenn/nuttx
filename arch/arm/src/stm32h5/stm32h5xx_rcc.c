@@ -1205,6 +1205,13 @@ void stm32_stdclockconfig(void)
       regval |= STM32_RCC_CCIPR5_ADCDACSEL;
       putreg32(regval, STM32_RCC_CCIPR5);
 #endif
+
+#if defined(CONFIG_STM32H5_USB)
+      regval = getreg32(STM32_RCC_CCIPR4);
+      regval &= ~RCC_CCIPR4_USBSEL_MASK;
+      regval |= RCC_CCIPR4_USBSEL_HSI48KERCK;
+      putreg32(regval, STM32_RCC_CCIPR4);
+#endif
     }
 }
 #endif
