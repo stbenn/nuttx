@@ -1204,6 +1204,15 @@ void stm32_stdclockconfig(void)
       regval |= STM32_RCC_CCIPR5_ADCDACSEL;
       putreg32(regval, STM32_RCC_CCIPR5);
 #endif
+
+      /* Configure FDCAN source clock */
+#if defined(STM32_RCC_CCIPR5_FDCANSEL)
+      regval = getreg32(STM32_RCC_CCIPR5);
+      regval &= ~RCC_CCIPR5_FDCANSEL_MASK;
+      regval |= STM32_RCC_CCIPR5_FDCANSEL;
+      putreg32(regval, STM32_RCC_CCIPR5);
+#endif
+
     }
 }
 #endif

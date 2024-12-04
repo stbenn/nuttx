@@ -49,30 +49,17 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Clock source *************************************************************/
+/* Configure FDCAN TQ Clock *************************************************/
 
-/* TODO - Change this to use Kconfig. Options are
- * 1. HSE (Default after reset)
- * 2. PLL1_Q
- * 3. PLL2_Q
- * 4. Disabled
- *
- * Also, Add option for utilizing PDIV.
-*/
+/* Define STM32_FDCAN_PDIV (FDCAN_CKDIV PDIV[3:0] Value) in board.h */
 
-#if defined(CONFIG_STM32H5_FDCAN_CLK_PLL1Q)
-#  define STM32_FDCAN_FREQUENCY STM32_PLL1Q_FREQUENCY
-#elif defined(CONFIG_STM32H5_FDCAN_CLK_PLL2Q)
-#  define STM32_FDCAN_FREQUENCY STM32_PLL2Q_FREQUENCY
-#else /* CONFIG_STM32H5_FDCAN_CLK_HSE */
-#  define STM32_FDCAN_FREQUENCY STM32_HSE_FREQUENCY
-#endif
-
-#ifdef CONFIG_STM32H5_FDCAN_PDIV_EN
-#  define FDCANCLK_PDIV              CONFIG_STM32H5_FDCAN_PDIV_VALUE
+#ifdef STM32H5_FDCAN_PDIV
+#  define FDCANCLK_PDIV              STM32_FDCAN_PDIV
 #else
 #  define FDCANCLK_PDIV              (0)
 #endif
+
+/* Define STM32_FDCAN_FREQUENCY (fdcan_ker_ck) in board.h */
 
 #if FDCANCLK_PDIV == 0
 #  define STM32_FDCANCLK_FREQUENCY (STM32_FDCAN_FREQUENCY / (1))
