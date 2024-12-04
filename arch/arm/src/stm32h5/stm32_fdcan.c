@@ -53,7 +53,7 @@
 
 /* Define STM32_FDCAN_PDIV (FDCAN_CKDIV PDIV[3:0] Value) in board.h */
 
-#ifdef STM32H5_FDCAN_PDIV
+#ifdef STM32_FDCAN_PDIV
 #  define FDCANCLK_PDIV              STM32_FDCAN_PDIV
 #else
 #  define FDCANCLK_PDIV              (0)
