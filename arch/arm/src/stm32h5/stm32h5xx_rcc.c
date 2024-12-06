@@ -1258,7 +1258,6 @@ void stm32_stdclockconfig(void)
       regval |= STM32_RCC_CCIPR3_SPI6SEL;
       putreg32(regval, STM32_RCC_CCIPR3);
 #endif
-
     }
 }
 #endif

@@ -1627,6 +1627,7 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev,
                         SPI_CFG1_MBR_MASK | SPI_CFG1_BPASS,
                         setbits);
         }
+
       spi_enable(priv, true);
 
       /* Save the frequency selection so that subsequent reconfigurations
