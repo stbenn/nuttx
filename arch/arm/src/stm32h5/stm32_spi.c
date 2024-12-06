@@ -183,155 +183,80 @@
 /* Kernel clock configuration */
 
 #if defined(CONFIG_STM32H5_SPI1)
-#  if defined(CONFIG_STM32H5_SPI1_CLK_PLL1Q)
-#    define SPI1_KERNEL_CLOCK_FREQ STM32_PLL1Q_FREQUENCY
-#    define SPI1_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI1SEL_PLL1QCK
-#  elif defined(STM32H5_SPI1_CLK_PLL2P)
-#    define SPI1_KERNEL_CLOCK_FREQ STM32_PLL2P_FREQUENCY
-#    define SPI1_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI1SEL_PLL2PCK
-#  elif defined(STM32H5_SPI1_CLK_PLL3P)
-#    define SPI1_KERNEL_CLOCK_FREQ STM32_PLL3P_FREQUENCY
-#    define SPI1_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI1SEL_PLL3PCK
-#  elif defined(STM32H5_SPI1_CLK_AUDIO)
-#    define SPI1_KERNEL_CLOCK_FREQ STM32_AUDIOCLK_FREQUENCY
-#    define SPI1_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI1SEL_AUDIOCK
-#  elif defined(STM32H5_SPI1_CLK_PER)
-#    define SPI1_KERNEL_CLOCK_FREQ STM32_PERCLK_FREQUENCY
-#    define SPI1_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI1SEL_PERCK
+#  ifndef STM32_SPI1_FREQUENCY
+#    error Must define STM32_SPI1_FREQUENCY in board.h
 #  else
-#    error: Not a supported clock for SPI1
+#    if STM32_SPI1_FREQUENCY > SPI_MAX_KER_CK
+#      error Not supported SPI1 frequency
+#    endif
 #  endif
-#  if SPI1_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
-#    error Not supported SPI1 frequency
+#  ifndef STM32_RCC_CCIPR3_SPI1SEL
+#    error Must define STM32_RCC_CCIPR3_SPI1SEL in board.h
 #  endif
 #endif /* SPI1 */
 
 #if defined(CONFIG_STM32H5_SPI2)
-#  if defined(CONFIG_STM32H5_SPI2_CLK_PLL1Q)
-#    define SPI2_KERNEL_CLOCK_FREQ STM32_PLL1Q_FREQUENCY
-#    define SPI2_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI2SEL_PLL1QCK
-#  elif defined(STM32H5_SPI2_CLK_PLL2P)
-#    define SPI2_KERNEL_CLOCK_FREQ STM32_PLL2P_FREQUENCY
-#    define SPI2_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI2SEL_PLL2PCK
-#  elif defined(STM32H5_SPI2_CLK_PLL3P)
-#    define SPI2_KERNEL_CLOCK_FREQ STM32_PLL3P_FREQUENCY
-#    define SPI2_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI2SEL_PLL3PCK
-#  elif defined(STM32H5_SPI2_CLK_AUDIO)
-#    define SPI2_KERNEL_CLOCK_FREQ STM32_AUDIOCLK_FREQUENCY
-#    define SPI2_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI2SEL_AUDIOCK
-#  elif defined(STM32H5_SPI2_CLK_PER)
-#    define SPI2_KERNEL_CLOCK_FREQ STM32_PERCLK_FREQUENCY
-#    define SPI2_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI2SEL_PERCK
+#  ifndef STM32_SPI2_FREQUENCY
+#    error Must define STM32_SPI2_FREQUENCY in board.h
 #  else
-#    error: Not a supported clock for SPI2
+#    if STM32_SPI2_FREQUENCY > SPI_MAX_KER_CK
+#      error Not supported SPI2 frequency
+#    endif
 #  endif
-#  if SPI2_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
-#    error Not supported SPI2 frequency
+#  ifndef STM32_RCC_CCIPR3_SPI2SEL
+#    error Must define STM32_RCC_CCIPR3_SPI2SEL in board.h
 #  endif
 #endif /* SPI2 */
 
 #if defined(CONFIG_STM32H5_SPI3)
-#  if defined(CONFIG_STM32H5_SPI3_CLK_PLL1Q)
-#    define SPI3_KERNEL_CLOCK_FREQ STM32_PLL1Q_FREQUENCY
-#    define SPI3_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI3SEL_PLL1QCK
-#  elif defined(STM32H5_SPI3_CLK_PLL2P)
-#    define SPI3_KERNEL_CLOCK_FREQ STM32_PLL2P_FREQUENCY
-#    define SPI3_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI3SEL_PLL2PCK
-#  elif defined(STM32H5_SPI3_CLK_PLL3P)
-#    define SPI3_KERNEL_CLOCK_FREQ STM32_PLL3P_FREQUENCY
-#    define SPI3_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI3SEL_PLL3PCK
-#  elif defined(STM32H5_SPI3_CLK_AUDIO)
-#    define SPI3_KERNEL_CLOCK_FREQ STM32_AUDIOCLK_FREQUENCY
-#    define SPI3_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI3SEL_AUDIOCK
-#  elif defined(STM32H5_SPI3_CLK_PER)
-#    define SPI3_KERNEL_CLOCK_FREQ STM32_PERCLK_FREQUENCY
-#    define SPI3_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI3SEL_PERCK
+#  ifndef STM32_SPI3_FREQUENCY
+#    error Must define STM32_SPI3_FREQUENCY in board.h
 #  else
-#    error: Not a supported clock for SPI3
+#    if STM32_SPI3_FREQUENCY > SPI_MAX_KER_CK
+#      error Not supported SPI3 frequency
+#    endif
 #  endif
-#  if SPI3_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
-#    error Not supported SPI3 frequency
+#  ifndef STM32_RCC_CCIPR3_SPI3SEL
+#    error Must define STM32_RCC_CCIPR3_SPI3SEL in board.h
 #  endif
 #endif /* SPI3 */
 
-#if defined(CONFIG_STM32H5_SPI4)
-#  if defined(CONFIG_STM32H5_SPI4_CLK_PCLK2)
-#    define SPI4_KERNEL_CLOCK_FREQ STM32_PCLK2_FREQUENCY
-#    define SPI4_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI4SEL_RCCPCLK2
-#  elif defined(CONFIG_STM32H5_SPI4_CLK_PLL2Q)
-#    define SPI4_KERNEL_CLOCK_FREQ STM32_PLL2Q_FREQUENCY
-#    define SPI4_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI4SEL_PLL2QCK
-#  elif defined(CONFIG_STM32H5_SPI4_CLK_PLL3Q)
-#    define SPI4_KERNEL_CLOCK_FREQ STM32_PLL3Q_FREQUENCY
-#    define SPI4_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI4SEL_PLL3QCK
-#  elif defined(CONFIG_STM32H5_SPI4_CLK_HSI)
-#    define SPI4_KERNEL_CLOCK_FREQ STM32_HSI_FREQUENCY
-#    define SPI4_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI4SEL_HSIKERCK
-#  elif defined(CONFIG_STM32H5_SPI4_CLK_CSI)
-#    define SPI4_KERNEL_CLOCK_FREQ STM32_CSI_FREQUENCY
-#    define SPI4_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI4SEL_CSIKERCK
-#  elif defined(CONFIG_STM32H5_SPI4_CLK_HSE)
-#    define SPI4_KERNEL_CLOCK_FREQ STM32_HSE_FREQUENCY
-#    define SPI4_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI4SEL_HSECK
+#if defined(CONFIG_STM32H5_SPI1)
+#  ifndef STM32_SPI1_FREQUENCY
+#    error Must define STM32_SPI1_FREQUENCY in board.h
 #  else
-#    error Not supported yet
+#    if STM32_SPI1_FREQUENCY > SPI_MAX_KER_CK
+#      error Not supported SPI1 frequency
+#    endif
 #  endif
-#  if SPI4_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
-#    error Not supported SPI4 frequency
+#  ifndef STM32_RCC_CCIPR3_SPI1SEL
+#    error Must define STM32_RCC_CCIPR3_SPI1SEL in board.h
 #  endif
-#endif /* SPI4 */
+#endif /* SPI1 */
 
 #if defined(CONFIG_STM32H5_SPI5)
-#  if defined(CONFIG_STM32H5_SPI5_CLK_PCLK3)
-#    define SPI5_KERNEL_CLOCK_FREQ STM32_PCLK3_FREQUENCY
-#    define SPI5_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI5SEL_RCCPCLK3
-#  elif defined(CONFIG_STM32H5_SPI5_CLK_PLL2Q)
-#    define SPI5_KERNEL_CLOCK_FREQ STM32_PLL2Q_FREQUENCY
-#    define SPI5_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI5SEL_PLL2QCK
-#  elif defined(CONFIG_STM32H5_SPI5_CLK_PLL3Q)
-#    define SPI5_KERNEL_CLOCK_FREQ STM32_PLL3Q_FREQUENCY
-#    define SPI5_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI5SEL_PLL3QCK
-#  elif defined(CONFIG_STM32H5_SPI5_CLK_HSI)
-#    define SPI5_KERNEL_CLOCK_FREQ STM32_HSI_FREQUENCY
-#    define SPI5_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI5SEL_HSIKERCK
-#  elif defined(CONFIG_STM32H5_SPI5_CLK_CSI)
-#    define SPI5_KERNEL_CLOCK_FREQ STM32_CSI_FREQUENCY
-#    define SPI5_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI5SEL_CSIKERCK
-#  elif defined(CONFIG_STM32H5_SPI5_CLK_HSE)
-#    define SPI5_KERNEL_CLOCK_FREQ STM32_HSE_FREQUENCY
-#    define SPI5_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI5SEL_HSECK
+#  ifndef STM32_SPI5_FREQUENCY
+#    error Must define STM32_SPI5_FREQUENCY in board.h
 #  else
-#    error Not supported yet
+#    if STM32_SPI5_FREQUENCY > SPI_MAX_KER_CK
+#      error Not supported SPI5 frequency
+#    endif
 #  endif
-#  if SPI5_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
-#    error Not supported SPI5 frequency
+#  ifndef STM32_RCC_CCIPR3_SPI5SEL
+#    error Must define STM32_RCC_CCIPR3_SPI5SEL in board.h
 #  endif
 #endif /* SPI5 */
 
 #if defined(CONFIG_STM32H5_SPI6)
-#  if defined(CONFIG_STM32H5_SPI6_CLK_PCLK2)
-#    define SPI6_KERNEL_CLOCK_FREQ STM32_PCLK2_FREQUENCY
-#    define SPI6_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI6SEL_RCCPCLK2
-#  elif defined(CONFIG_STM32H5_SPI6_CLK_PLL2Q)
-#    define SPI6_KERNEL_CLOCK_FREQ STM32_PLL2Q_FREQUENCY
-#    define SPI6_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI6SEL_PLL2QCK
-#  elif defined(CONFIG_STM32H5_SPI6_CLK_PLL3Q)
-#    define SPI6_KERNEL_CLOCK_FREQ STM32_PLL3Q_FREQUENCY
-#    define SPI6_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI6SEL_PLL3QCK
-#  elif defined(CONFIG_STM32H5_SPI6_CLK_HSI)
-#    define SPI6_KERNEL_CLOCK_FREQ STM32_HSI_FREQUENCY
-#    define SPI6_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI6SEL_HSIKERCK
-#  elif defined(CONFIG_STM32H5_SPI6_CLK_CSI)
-#    define SPI6_KERNEL_CLOCK_FREQ STM32_CSI_FREQUENCY
-#    define SPI6_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI6SEL_CSIKERCK
-#  elif defined(CONFIG_STM32H5_SPI6_CLK_HSE)
-#    define SPI6_KERNEL_CLOCK_FREQ STM32_HSE_FREQUENCY
-#    define SPI6_KERNEL_CLOCK_SEL RCC_CCIPR3_SPI6SEL_HSECK
+#  ifndef STM32_SPI6_FREQUENCY
+#    error Must define STM32_SPI6_FREQUENCY in board.h
 #  else
-#    error Not supported yet
+#    if STM32_SPI6_FREQUENCY > SPI_MAX_KER_CK
+#      error Not supported SPI6 frequency
+#    endif
 #  endif
-#  if SPI6_KERNEL_CLOCK_FREQ > SPI_MAX_KER_CK
-#    error Not supported SPI6 frequency
+#  ifndef STM32_RCC_CCIPR3_SPI6SEL
+#    error Must define STM32_RCC_CCIPR3_SPI6SEL in board.h
 #  endif
 #endif /* SPI6 */
 
@@ -353,7 +278,6 @@ struct stm32_spidev_s
   uint32_t         spibase;      /* SPIn base address */
   uint32_t         spiclock;     /* Clocking for the SPI module */
   uint8_t          spiirq;       /* SPI IRQ number */
-  uint32_t         rccsel;      /* SPIn RCC clock selection */
 #ifdef CONFIG_STM32H5_SPI_DMA
   volatile uint8_t rxresult;     /* Result of the RX DMA */
   volatile uint8_t txresult;     /* Result of the RX DMA */
@@ -517,9 +441,8 @@ static struct stm32_spidev_s g_spi1dev =
     .ops    = &g_sp1iops,
   },
   .spibase  = STM32_SPI1_BASE,
-  .spiclock = SPI1_KERNEL_CLOCK_FREQ,
+  .spiclock = STM32_SPI1_FREQUENCY,
   .spiirq   = STM32_IRQ_SPI1,
-  .rccsel   = SPI1_KERNEL_CLOCK_SEL,
 #ifdef CONFIG_STM32H5_SPI1_DMA
   .rxch     = DMAMAP_SPI1_RX,
   .txch     = DMAMAP_SPI1_TX,
@@ -590,9 +513,8 @@ static struct stm32_spidev_s g_spi2dev =
     .ops    = &g_sp2iops,
   },
   .spibase  = STM32_SPI2_BASE,
-  .spiclock = SPI2_KERNEL_CLOCK_FREQ,
+  .spiclock = STM32_SPI2_FREQUENCY,
   .spiirq   = STM32_IRQ_SPI2,
-  .rccsel   = SPI2_KERNEL_CLOCK_SEL,
 #ifdef CONFIG_STM32H5_SPI2_DMA
   .rxch     = DMAMAP_SPI2_RX,
   .txch     = DMAMAP_SPI2_TX,
@@ -663,9 +585,8 @@ static struct stm32_spidev_s g_spi3dev =
     .ops    = &g_sp3iops,
   },
   .spibase  = STM32_SPI3_BASE,
-  .spiclock = SPI3_KERNEL_CLOCK_FREQ,
+  .spiclock = STM32_SPI3_FREQUENCY,
   .spiirq   = STM32_IRQ_SPI3,
-  .rccsel   = SPI3_KERNEL_CLOCK_SEL,
 #ifdef CONFIG_STM32H5_SPI3_DMA
   .rxch     = DMAMAP_SPI3_RX,
   .txch     = DMAMAP_SPI3_TX,
@@ -736,9 +657,8 @@ static struct stm32_spidev_s g_spi4dev =
     .ops    = &g_sp4iops,
   },
   .spibase  = STM32_SPI4_BASE,
-  .spiclock = SPI4_KERNEL_CLOCK_FREQ,
+  .spiclock = STM32_SPI4_FREQUENCY,
   .spiirq   = STM32_IRQ_SPI4,
-  .rccsel   = SPI4_KERNEL_CLOCK_SEL,
 #ifdef CONFIG_STM32H5_SPI4_DMA
   .rxch     = DMAMAP_SPI4_RX,
   .txch     = DMAMAP_SPI4_TX,
@@ -809,9 +729,8 @@ static struct stm32_spidev_s g_spi5dev =
     .ops    = &g_sp5iops,
   },
   .spibase  = STM32_SPI5_BASE,
-  .spiclock = SPI5_KERNEL_CLOCK_FREQ,
+  .spiclock = STM32_SPI5_FREQUENCY,
   .spiirq   = STM32_IRQ_SPI5,
-  .rccsel   = SPI5_KERNEL_CLOCK_SEL,
 #ifdef CONFIG_STM32H5_SPI5_DMA
   .rxch     = DMAMAP_SPI5_RX,
   .txch     = DMAMAP_SPI5_TX,
@@ -883,9 +802,8 @@ static struct stm32_spidev_s g_spi6dev =
     .ops    = &g_sp6iops,
   },
   .spibase  = STM32_SPI6_BASE,
-  .spiclock = SPI6_KERNEL_CLOCK_FREQ,
+  .spiclock = STM32_SPI6_FREQUENCY,
   .spiirq   = STM32_IRQ_SPI6,
-  .rccsel   = SPI6_KERNEL_CLOCK_SEL,
 #ifdef CONFIG_STM32H5_SPI6_DMA
   .rxch     = DMAMAP_SPI6_RX,
   .txch     = DMAMAP_SPI6_TX,
@@ -2651,10 +2569,6 @@ static void spi_bus_initialize(struct stm32_spidev_s *priv)
   priv->frequency = 0;
   priv->nbits     = 8;
   priv->mode      = SPIDEV_MODE0;
-
-  /* Configure the SPI Input Clock */
-
-  modifyreg32(STM32_RCC_CCIPR3, 0, priv->rccsel);
 
   /* Select a default frequency of approx. 400KHz */
 
