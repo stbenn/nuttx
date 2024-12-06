@@ -53,6 +53,13 @@
 
 void stm32_board_initialize(void)
 {
+
+#if defined(CONFIG_SPI)
+  /* Configure SPI chip selects */
+
+  stm32_spidev_initialize();
+#endif
+
 #ifdef CONFIG_ARCH_LEDS
   /* Configure on-board LEDs if LED support has been selected. */
 

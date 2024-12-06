@@ -25,6 +25,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/fs/fs.h>
 
 #include <sys/mount.h>
 #include <sys/types.h>
@@ -101,6 +102,17 @@ int stm32_bringup(void)
   board_button_initialize();
 #endif
 #endif /* CONFIG_INPUT_BUTTONS */
+
+#ifdef CONFIG_MMCSD_SPI
+  /* Initialize the MMC/SD SPI driver (SPI3 is used) */
+
+  ret = stm32_mmcsd_initialize(CONFIG_NSH_MMCSDMINOR);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize SD slot %d: %d\n",
+             CONFIG_NSH_MMCSDMINOR, ret);
+    }
+#endif
 
 #ifdef CONFIG_ADC
   ret = stm32_adc_setup();

@@ -88,6 +88,11 @@
 #define GPIO_BTN_USER   (GPIO_INPUT | GPIO_FLOAT | GPIO_EXTI | \
                          GPIO_PORTC | GPIO_PIN13)
 
+#define GPIO_MMCSD_CS    (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHZ | \
+                          GPIO_OUTPUT_SET | GPIO_PORTD | GPIO_PIN15)
+#define GPIO_MMCSD_NCD    (GPIO_INPUT | GPIO_PULLUP | GPIO_EXTI |  \
+                           GPIO_PORTF | GPIO_PIN3)
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -125,8 +130,24 @@ int stm32_bringup(void);
  *   Initialize ADC and register the ADC driver.
  ****************************************************************************/
 
+#ifdef CONFIG_STM32H5_SPI
+void stm32_spidev_initialize(void);
+#endif
+
 #ifdef CONFIG_ADC
 int stm32_adc_setup(void);
+#endif
+
+/****************************************************************************
+ * Name: stm32_mmcsd_initialize
+ *
+ * Description:
+ *   Initialize SPI-based SD card and card detect thread.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_MMCSD_SPI
+int stm32_mmcsd_initialize(int minor);
 #endif
 
 #endif /* __ASSEMBLY__ */

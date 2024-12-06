@@ -57,6 +57,7 @@
 #define STM32_SYSCLK_FREQUENCY  250000000ul
 #define STM32_LSI_FREQUENCY         32000
 #define STM32_LSE_FREQUENCY         32768
+#define STM32_HSE_FREQUENCY     25000000ul
 
 #define STM32_BOARD_USEHSI       1
 #define STM32_BOARD_HSIDIV       RCC_CR_HSIDIV(1)
@@ -75,7 +76,7 @@
                                    RCC_PLL1CFGR_PLL1REN)
 #define STM32_PLLCFG_PLL1N         RCC_PLL1DIVR_PLL1N(125)
 #define STM32_PLLCFG_PLL1P         RCC_PLL1DIVR_PLL1P(2)
-#define STM32_PLLCFG_PLL1Q         RCC_PLL1DIVR_PLL1Q(2)
+#define STM32_PLLCFG_PLL1Q         RCC_PLL1DIVR_PLL1Q(4)
 #define STM32_PLLCFG_PLL1R         RCC_PLL1DIVR_PLL1R(2)
 #define STM32_PLLCFG_PLL1DIVR     (STM32_PLLCFG_PLL1N | \
                                    STM32_PLLCFG_PLL1P | \
@@ -84,7 +85,7 @@
 
 #define STM32_VCO1_FRQ            ((STM32_HSI_FREQUENCY / 8) * 125)
 #define STM32_PLL1P_FREQUENCY     (STM32_VCO1_FRQ / 2)
-#define STM32_PLL1Q_FREQUENCY     (STM32_VCO1_FRQ / 2)
+#define STM32_PLL1Q_FREQUENCY     (STM32_VCO1_FRQ / 4)
 #define STM32_PLL1R_FREQUENCY     (STM32_VCO1_FRQ / 2)
 
 /* PLL2 config: Needed to use 2 ADC at max speed. */
@@ -202,12 +203,31 @@
 #define GPIO_ADC1_IN3   (GPIO_ADC1_IN3_0)
 #define GPIO_ADC1_IN10  (GPIO_ADC1_IN10_0)
 
+/* FDCAN Clock Source *********************************************************/
+#define STM32_RCC_CCIPR5_FDCANSEL  RCC_CCIPR5_FDCANSEL_HSECK
+#define STM32_FDCAN_FREQUENCY      STM32_HSE_FREQUENCY
+#define STM32_FDCAN_PDIV           0
+
+/* SPI Clock Sources *********************************************************/
+#define STM32_RCC_CCIPR3_SPI1SEL  RCC_CCIPR3_SPI1SEL_PLL1QCK
+#define STM32_SPI1_FREQUENCY      STM32_PLL1Q_FREQUENCY
+
 /* USART3: Connected to Arduino connector D0/D1 (or to STLink VCP if solder
  * bridges SB123 to SB130 are re-worked accordingly).
  */
 
+
+#define GPIO_SPI1_SCK     GPIO_SPI1_SCK_1
+#define GPIO_SPI1_MOSI    GPIO_SPI1_MOSI_2
+#define GPIO_SPI1_MISO    GPIO_SPI1_MISO_3
+
 #define GPIO_USART3_RX   GPIO_USART3_RX_4    /* PD9 */
 #define GPIO_USART3_TX   GPIO_USART3_TX_4    /* PD8 */
+
+#define GPIO_FDCAN1_RX   GPIO_FDCAN1_RX_1    /* PD9 */
+#define GPIO_FDCAN1_TX   GPIO_FDCAN1_TX_1    /* PD8 */
+#define GPIO_FDCAN2_RX   GPIO_FDCAN2_RX_1    /* PD9 */
+#define GPIO_FDCAN2_TX   GPIO_FDCAN2_TX_1    /* PD8 */
 
 /* LED definitions **********************************************************/
 

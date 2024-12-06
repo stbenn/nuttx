@@ -39,6 +39,14 @@ ifeq ($(CONFIG_BOARDCTL),y)
 CSRCS += stm32_appinit.c
 endif
 
+ifeq ($(CONFIG_STM32H5_SPI),y)
+CSRCS += stm32_spi.c
+endif
+
+ifeq ($(CONFIG_MMCSD),y)
+CSRCS += stm32_mmcsd.c
+endif
+
 ifeq ($(CONFIG_ADC),y)
 CSRCS += stm32_adc.c
 endif
