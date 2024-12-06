@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/arm64/src/imx9/imx9_boot.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -124,10 +126,6 @@ void arm64_el_init(void)
 
 void arm64_chip_boot(void)
 {
-  /* MAP IO and DRAM, enable MMU. */
-
-  arm64_mmu_init(true);
-
 #ifdef CONFIG_IMX9_BOOTLOADER
   imx9_mix_powerup();
 
@@ -143,6 +141,10 @@ void arm64_chip_boot(void)
   imx9_dram_init();
 #endif
 #endif
+
+  /* MAP IO and DRAM, enable MMU. */
+
+  arm64_mmu_init(true);
 
   /* Do UART early initialization & pin muxing */
 

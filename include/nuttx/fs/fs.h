@@ -49,6 +49,7 @@
 #include <nuttx/spawn.h>
 #include <nuttx/queue.h>
 #include <nuttx/irq.h>
+#include <nuttx/spinlock_type.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -403,7 +404,7 @@ struct inode
   FAR struct inode *i_parent;   /* Link to parent level inode */
   FAR struct inode *i_peer;     /* Link to same level inode */
   FAR struct inode *i_child;    /* Link to lower level inode */
-  atomic_short      i_crefs;    /* References to inode */
+  atomic_t          i_crefs;    /* References to inode */
   uint16_t          i_flags;    /* Flags for inode */
   union inode_ops_u u;          /* Inode operations */
   ino_t             i_ino;      /* Inode serial number */
@@ -491,6 +492,7 @@ struct file
 
 struct filelist
 {
+  spinlock_t        fl_lock;    /* Manage access to the file list */
   uint8_t           fl_rows;    /* The number of rows of fl_files array */
   uint8_t           fl_crefs;   /* The references to filelist */
   FAR struct file **fl_files;   /* The pointer of two layer file descriptors array */
