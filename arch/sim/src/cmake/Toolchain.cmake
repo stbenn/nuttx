@@ -1,6 +1,8 @@
 # ##############################################################################
 # arch/sim/src/cmake/Toolchain.cmake
 #
+# SPDX-License-Identifier: Apache-2.0
+#
 # Licensed to the Apache Software Foundation (ASF) under one or more contributor
 # license agreements.  See the NOTICE file distributed with this work for
 # additional information regarding copyright ownership.  The ASF licenses this
@@ -179,7 +181,7 @@ endif()
 if(CONFIG_SIM_M32)
   add_compile_options(-m32)
   add_link_options(-m32)
-elseif(NOT CONFIG_HOST_MACOS)
+elseif(NOT APPLE)
   add_compile_options(-no-pie)
   add_link_options(-Wl,-no-pie)
 endif()

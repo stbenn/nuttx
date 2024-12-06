@@ -1,6 +1,8 @@
 # ##############################################################################
 # arch/arm64/src/cmake/Toolchain.cmake
 #
+# SPDX-License-Identifier: Apache-2.0
+#
 # Licensed to the Apache Software Foundation (ASF) under one or more contributor
 # license agreements.  See the NOTICE file distributed with this work for
 # additional information regarding copyright ownership.  The ASF licenses this
@@ -71,13 +73,9 @@ set(NO_LTO "-fno-lto")
 
 if(CONFIG_ARCH_ARMV8A)
   add_compile_options(-march=armv8-a)
-endif()
-
-if(CONFIG_ARCH_ARMV8R)
+elseif(CONFIG_ARCH_ARMV8R)
   add_compile_options(-march=armv8-r)
-endif()
-
-if(CONFIG_ARCH_CORTEX_A53)
+elseif(CONFIG_ARCH_CORTEX_A53)
   add_compile_options(-mcpu=cortex-a53)
 elseif(CONFIG_ARCH_CORTEX_A57)
   add_compile_options(-mcpu=cortex-a57)
