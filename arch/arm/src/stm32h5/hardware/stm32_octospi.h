@@ -105,12 +105,12 @@
 
 #define OCTOSPI_CR_EN                 (1 << 0)   /* Bit 0:  OCTOSPI Enable */
 #define OCTOSPI_CR_ABORT              (1 << 1)   /* Bit 1:  Abort request */
+#define OCTOSPI_CR_DMAEN              (1 << 2)   /* Bit 2:  DMA enable */
 #define OCTOSPI_CR_TCEN               (1 << 3)   /* Bit 3:  Timeout counter enable */
-#define OCTOSPI_CR_SSHIFT             (1 << 4)   /* Bit 4:  Sample shift */
-#define OCTOSPI_CR_DFM                (1 << 6)   /* Bit 6:  DFM: Dual-flash mode */
-#define OCTOSPI_CR_FSEL               (1 << 7)   /* Bit 7:  FSEL: Flash memory selection */
+#define OCTOSPI_CR_DMM                (1 << 6)   /* Bit 6:  DMM: Dual-memory mode */
+#define OCTOSPI_CR_MSEL               (1 << 7)   /* Bit 7:  MSEL: Memory selection */
 #define OCTOSPI_CR_FTHRES_SHIFT       (8)        /* Bits 8-11: FIFO threshold level */
-#define OCTOSPI_CR_FTHRES_MASK        (0x0f << OCTOSPI_CR_FTHRES_SHIFT)
+#define OCTOSPI_CR_FTHRES_MASK        (0x1f << OCTOSPI_CR_FTHRES_SHIFT)
 #define OCTOSPI_CR_TEIE               (1 << 16)  /* Bit 16:  Transfer error interrupt enable */
 #define OCTOSPI_CR_TCIE               (1 << 17)  /* Bit 17:  Transfer complete interrupt enable */
 #define OCTOSPI_CR_FTIE               (1 << 18)  /* Bit 18:  FIFO threshold interrupt enable */
@@ -128,16 +128,46 @@
 #define CR_FMODE_AUTOPOLL  2   /* Automatic polling mode */
 #define CR_FMODE_MEMMAP    3   /* Memory-mapped mode */
 
-/* Device Configuration Register */
+/* Device Configuration Register 1 */
 
-#define OCTOSPI_DCR_CKMODE            (1 << 0)   /* Bit 0:  Mode 0 / mode 3 */
-#define OCTOSPI_DCR_CSHT_SHIFT        (8)        /* Bits 8-10: Chip select high time */
-#define OCTOSPI_DCR_CSHT_MASK         (0x7 << OCTOSPI_DCR_CSHT_SHIFT)
-#define OCTOSPI_DCR_FSIZE_SHIFT       (16)       /* Bits 16-20: Flash memory size */
-#define OCTOSPI_DCR_FSIZE_MASK        (0x1f << OCTOSPI_DCR_FSIZE_SHIFT)
+#define OCTOSPI_DCR1_CKMODE             (1 << 0)   /* Bit 0:  Mode 0 / mode 3 */
+#define OCTOSPI_DCR1_FRCK               (1 << 1)   /* Bit 1:  Free Running Clock */
+#define OCTOSPI_DCR1_DLYBYP             (1 << 2)   /* Bit 2:  Delay block bypass */
 
-#define OCTOSPI_DCR2_PRESCALER_SHIFT    (24)       /* Bits 24-31: Clock prescaler */
+#define OCTOSPI_DCR1_CSHT_SHIFT         (8)        /* Bits 8-10: Chip select high time */
+#define OCTOSPI_DCR1_CSHT_MASK          (0x3f << OCTOSPI_DCR1_CSHT_SHIFT)
+#define OCTOSPI_DCR1_DEVSIZE_SHIFT      (16)       /* Bits 16-20: Flash memory size */
+
+#define OCTOSPI_DCR1_DEVSIZE_MASK       (0x1f << OCTOSPI_DCR1_DEVSIZE_SHIFT)
+#define OCTOSPI_DCR1_MTYP_SHIFT         (24)       /* Bits 24-26: Memory Type */
+#define OCTOSPI_DCR1_MTYP_MASK          (0x7 << OCTOSPI_DCR1_MTYP_SHIFT)
+#define OCTOSPI_DCR1_MTYP_MICRON_MODE   (0x0 << OCTOSPI_DCR1_MTYP_SHIFT)
+#define OCTOSPI_DCR1_MTYP_MACRNX_MODE   (0x1 << OCTOSPI_DCR1_MTYP_SHIFT)
+#define OCTOSPI_DCR1_MTYP_STD_MODE      (0x2 << OCTOSPI_DCR1_MTYP_SHIFT)
+#define OCTOSPI_DCR1_MTYP_MACRNX_RAM    (0x3 << OCTOSPI_DCR1_MTYP_SHIFT)
+#define OCTOSPI_DCR1_MTYP_HYPBUS_MEM    (0x4 << OCTOSPI_DCR1_MTYP_SHIFT)
+#define OCTOSPI_DCR1_MTYP_HYPBUS_REG    (0x5 << OCTOSPI_DCR1_MTYP_SHIFT)
+
+/* Device Configuration Register 2 */
+
+#define OCTOSPI_DCR2_PRESCALER_SHIFT    (0)       /* Bits 0-7: Clock prescaler */
 #define OCTOSPI_DCR2_PRESCALER_MASK     (0xff << OCTOSPI_CR_PRESCALER_SHIFT)
+
+#define OCTOSPI_DCR2_WRAPSIZE_SHIFT    (16)       /* Bits 16-18: Wrap Size */
+#define OCTOSPI_DCR2_WRAPSIZE_MASK     (0x7 << OCTOSPI_DCR2_WRAPSIZE_SHIFT) /* Bits 0-7: Clock prescaler */
+#define OCTOSPI_DCR2_WRAPSIZE_DIS      (0x0 << OCTOSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
+#define OCTOSPI_DCR2_WRAPSIZE_16B      (0x2 << OCTOSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
+#define OCTOSPI_DCR2_WRAPSIZE_32B      (0x3 << OCTOSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
+#define OCTOSPI_DCR2_WRAPSIZE_64B      (0x4 << OCTOSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
+#define OCTOSPI_DCR2_WRAPSIZE_128B     (0x5 << OCTOSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
+
+/* Device Configuration Register 3 */
+
+#define OCTOSPI_DCR3_CSBOUND_SHIFT    (16)       /* Bits 16-20: Clock prescaler */
+#define OCTOSPI_DCR3_CSBOUND_MASK     (0x1f << OCTOSPI_CR_CSBOUND_SHIFT)
+#define OCTOSPI_DCR3_CSBOUND(n)       ((n << OCTOSPI_CR_CSBOUND_SHIFT) & OCSOSPI_DCR3_CSBOUND_MASK) /* NCS boundary = 2^n bytes when n = 1-31 */
+
+/* Device Configuration Register 4 */
 
 /* Status Register */
 
@@ -148,7 +178,7 @@
 #define OCTOSPI_SR_TOF                (1 << 4)   /* Bit 4:  Timeout flag */
 #define OCTOSPI_SR_BUSY               (1 << 5)   /* Bit 5:  Busy */
 #define OCTOSPI_SR_FLEVEL_SHIFT       (8)        /* Bits 8-12: FIFO threshold level */
-#define OCTOSPI_SR_FLEVEL_MASK        (0x1f << OCTOSPI_SR_FLEVEL_SHIFT)
+#define OCTOSPI_SR_FLEVEL_MASK        (0x3f << OCTOSPI_SR_FLEVEL_SHIFT)
 
 /* Flag Clear Register */
 
@@ -158,6 +188,12 @@
 #define OCTOSPI_FCR_CTOF              (1 << 4)   /* Bit 4:  Clear Timeout flag */
 
 /* Data Length Register */
+
+/* Instruction Register */
+
+#define OCTOSPI_IR_INSTRUCTION_SHIFT (0)        /* Bits 0-7: Instruction */
+#define OCTOSPI_IR_INSTRUCTION_MASK  (0xFFFFffff << OCTOSPI_CCR_INSTRUCTION_SHIFT)
+#  define OCTOSPI_IR_INST(n)         ((uint32_t)(n) << OCTOSPI_CCR_INSTRUCTION_SHIFT)
 
 /* Communication Configuration Register */
 
@@ -191,33 +227,58 @@
 #define CCR_DMODE_DUAL      2   /* Data on two lines */
 #define CCR_DMODE_QUAD      3   /* Data on four lines */
 
-#define OCTOSPI_CCR_INSTRUCTION_SHIFT (0)        /* Bits 0-7: Instruction */
-#define OCTOSPI_CCR_INSTRUCTION_MASK  (0xff << OCTOSPI_CCR_INSTRUCTION_SHIFT)
-#  define OCTOSPI_CCR_INST(n)         ((uint32_t)(n) << OCTOSPI_CCR_INSTRUCTION_SHIFT)
-#define OCTOSPI_CCR_IMODE_SHIFT       (8)        /* Bits 8-9: Instruction mode */
-#define OCTOSPI_CCR_IMODE_MASK        (0x3 << OCTOSPI_CCR_IMODE_SHIFT)
+#define OCTOSPI_CCR_IMODE_SHIFT       (0)        /* Bits 0-2: Instruction mode */
+#define OCTOSPI_CCR_IMODE_MASK        (0x7 << OCTOSPI_CCR_IMODE_SHIFT)
 #  define OCTOSPI_CCR_IMODE(n)        ((uint32_t)(n) << OCTOSPI_CCR_IMODE_SHIFT)
-#define OCTOSPI_CCR_ADMODE_SHIFT      (10)        /* Bits 10-11: Address mode */
-#define OCTOSPI_CCR_ADMODE_MASK       (0x3 << OCTOSPI_CCR_ADMODE_SHIFT)
+
+#define OCTOSPI_CCR_IDTR              (1 << 3)   /* Bit 3: Instruction double transfer rate */
+
+#define OCTOSPI_CCR_ISIZE_SHIFT       (4)        /* Bits 4-5: Instruction size */
+#define OCTOSPI_CCR_ISIZE_MASK        (0x3 << OCTOSPI_CCR_ISIZE_SHIFT)
+#  define OCTOSPI_CCR_ISIZE_8b        (0 << OCTOSPI_CCR_ISIZE_SHIFT)
+#  define OCTOSPI_CCR_ISIZE_16b       (1 << OCTOSPI_CCR_ISIZE_SHIFT)
+#  define OCTOSPI_CCR_ISIZE_24b       (2 << OCTOSPI_CCR_ISIZE_SHIFT)
+#  define OCTOSPI_CCR_ISIZE_32b       (3 << OCTOSPI_CCR_ISIZE_SHIFT)
+
+#define OCTOSPI_CCR_ADMODE_SHIFT      (8)        /* Bits 10-11: Address mode */
+#define OCTOSPI_CCR_ADMODE_MASK       (0x7 << OCTOSPI_CCR_ADMODE_SHIFT)
 #  define OCTOSPI_CCR_ADMODE(n)       ((uint32_t)(n) << OCTOSPI_CCR_ADMODE_SHIFT)
+
+#define OCTOSPI_CCR_ADTR              (1 << 11)   /* Bit 11: Address double transfer rate */
+
 #define OCTOSPI_CCR_ADSIZE_SHIFT      (12)        /* Bits 12-13: Address size */
 #define OCTOSPI_CCR_ADSIZE_MASK       (0x3 << OCTOSPI_CCR_ADSIZE_SHIFT)
 #  define OCTOSPI_CCR_ADSIZE(n)       ((uint32_t)(n) << OCTOSPI_CCR_ADSIZE_SHIFT)
-#define OCTOSPI_CCR_ABMODE_SHIFT      (14)        /* Bits 14-15: Alternate bytes mode */
-#define OCTOSPI_CCR_ABMODE_MASK       (0x3 << OCTOSPI_CCR_ABMODE_SHIFT)
+#  define OCTOSPI_CCR_ADSIZE_8b       (0 << OCTOSPI_CCR_ADSIZE_SHIFT)
+#  define OCTOSPI_CCR_ADSIZE_16b      (1 << OCTOSPI_CCR_ADSIZE_SHIFT)
+#  define OCTOSPI_CCR_ADSIZE_24b      (2 << OCTOSPI_CCR_ADSIZE_SHIFT)
+#  define OCTOSPI_CCR_ADSIZE_32b      (3 << OCTOSPI_CCR_ADSIZE_SHIFT)
+
+#define OCTOSPI_CCR_ABMODE_SHIFT      (16)        /* Bits 16-18: Alternate bytes mode */
+#define OCTOSPI_CCR_ABMODE_MASK       (0x7 << OCTOSPI_CCR_ABMODE_SHIFT)
 #  define OCTOSPI_CCR_ABMODE(n)       ((uint32_t)(n) << OCTOSPI_CCR_ABMODE_SHIFT)
-#define OCTOSPI_CCR_ABSIZE_SHIFT      (16)        /* Bits 16-17: Alternate bytes size */
+
+#define OCTOSPI_CCR_ABDTR              (1 << 19)   /* Bit 19: Alternate-byte double transfer rate */
+
+#define OCTOSPI_CCR_ABSIZE_SHIFT      (20)        /* Bits 20-21: Alternate bytes size */
 #define OCTOSPI_CCR_ABSIZE_MASK       (0x3 << OCTOSPI_CCR_ABSIZE_SHIFT)
 #  define OCTOSPI_CCR_ABSIZE(n)       ((uint32_t)(n) << OCTOSPI_CCR_ABSIZE_SHIFT)
-#define OCTOSPI_CCR_DCYC_SHIFT        (18)        /* Bits 18-23: Number of dummy cycles */
-#define OCTOSPI_CCR_DCYC_MASK         (0x1f << OCTOSPI_CCR_DCYC_SHIFT)
-#  define OCTOSPI_CCR_DCYC(n)         ((uint32_t)(n) << OCTOSPI_CCR_DCYC_SHIFT)
+
 #define OCTOSPI_CCR_DMODE_SHIFT       (24)        /* Bits 24-25: Data mode */
 #define OCTOSPI_CCR_DMODE_MASK        (0x3 << OCTOSPI_CCR_DMODE_SHIFT)
 #  define OCTOSPI_CCR_DMODE(n)        ((uint32_t)(n) << OCTOSPI_CCR_DMODE_SHIFT)
-#define OCTOSPI_CCR_SIOO              (1 << 28)   /* Bit 28:  Send instruction only once mode */
-#define OCTOSPI_CCR_FRCM              (1 << 29)   /* Bit 28:  Enters Free running clock mode */
-#define OCTOSPI_CCR_DDRM              (1 << 31)   /* Bit 31:  Double data rate mode */
+
+#define OCTOSPI_CCR_DDTR              (1 << 27)   /* Bit 27: Data double transfer rate */
+#define OCTOSPI_CCR_DQSE              (1 << 29)   /* Bit 29: DQS enable */
+
+/* Timing Configuration Register */
+
+#define OCTOSPI_TCR_DCYC_SHIFT        (0)        /* Bits 0-4: Number of dummy cycles */
+#define OCTOSPI_TCR_DCYC_MASK         (0x1f << OCTOSPI_TCR_DCYC_SHIFT)
+#  define OCTOSPI_TCR_DCYC(n)         ((uint32_t)(n) << OCTOSPI_TCR_DCYC_SHIFT)
+
+#define OCTOSPI_TCR_DHQC              (1 << 28)   /* Bit 28: Delay hold quarter cycle */
+#define OCTOSPI_TCR_SSHIFT            (1 << 30)   /* Bit 30: Sample Shift */
 
 /* Address Register */
 
@@ -238,6 +299,186 @@
 
 #define OCTOSPI_LPTR_TIMEOUT_SHIFT    (0)        /* Bits 0-15: Timeout period */
 #define OCTOSPI_LPTR_TIMEOUT_MASK     (0xFFff << OCTOSPI_LPTR_TIMEOUT_SHIFT)
+
+/* Wrap Communication Configuration Register */
+
+#define WPCCR_IMODE_NONE      0   /* No instruction */
+#define WPCCR_IMODE_SINGLE    1   /* Instruction on a single line */
+#define WPCCR_IMODE_DUAL      2   /* Instruction on two lines */
+#define WPCCR_IMODE_QUAD      3   /* Instruction on four lines */
+
+#define WPCCR_ADMODE_NONE     0   /* No address */
+#define WPCCR_ADMODE_SINGLE   1   /* Address on a single line */
+#define WPCCR_ADMODE_DUAL     2   /* Address on two lines */
+#define WPCCR_ADMODE_QUAD     3   /* Address on four lines */
+
+#define WPCCR_ADSIZE_8        0   /* 8-bit address */
+#define WPCCR_ADSIZE_16       1   /* 16-bit address */
+#define WPCCR_ADSIZE_24       2   /* 24-bit address */
+#define WPCCR_ADSIZE_32       3   /* 32-bit address */
+
+#define WPCCR_ABMODE_NONE     0   /* No alternate bytes */
+#define WPCCR_ABMODE_SINGLE   1   /* Alternate bytes on a single line */
+#define WPCCR_ABMODE_DUAL     2   /* Alternate bytes on two lines */
+#define WPCCR_ABMODE_QUAD     3   /* Alternate bytes on four lines */
+
+#define WPCCR_ABSIZE_8        0   /* 8-bit alternate byte */
+#define WPCCR_ABSIZE_16       1   /* 16-bit alternate bytes */
+#define WPCCR_ABSIZE_24       2   /* 24-bit alternate bytes */
+#define WPCCR_ABSIZE_32       3   /* 32-bit alternate bytes */
+
+#define WPCCR_DMODE_NONE      0   /* No data */
+#define WPCCR_DMODE_SINGLE    1   /* Data on a single line */
+#define WPCCR_DMODE_DUAL      2   /* Data on two lines */
+#define WPCCR_DMODE_QUAD      3   /* Data on four lines */
+
+#define OCTOSPI_WPCCR_IMODE_SHIFT       (0)        /* Bits 0-2: Instruction mode */
+#define OCTOSPI_WPCCR_IMODE_MASK        (0x7 << OCTOSPI_WPCCR_IMODE_SHIFT)
+#  define OCTOSPI_WPCCR_IMODE(n)        ((uint32_t)(n) << OCTOSPI_WPCCR_IMODE_SHIFT)
+
+#define OCTOSPI_WPCCR_IDTR              (1 << 3)   /* Bit 3: Instruction double transfer rate */
+
+#define OCTOSPI_WPCCR_ISIZE_SHIFT       (4)        /* Bits 4-5: Instruction size */
+#define OCTOSPI_WPCCR_ISIZE_MASK        (0x3 << OCTOSPI_WPCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ISIZE_8b        (0 << OCTOSPI_WPCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ISIZE_16b       (1 << OCTOSPI_WPCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ISIZE_24b       (2 << OCTOSPI_WPCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ISIZE_32b       (3 << OCTOSPI_WPCCR_ISIZE_SHIFT)
+
+#define OCTOSPI_WPCCR_ADMODE_SHIFT      (8)        /* Bits 10-11: Address mode */
+#define OCTOSPI_WPCCR_ADMODE_MASK       (0x7 << OCTOSPI_WPCCR_ADMODE_SHIFT)
+#  define OCTOSPI_WPCCR_ADMODE(n)       ((uint32_t)(n) << OCTOSPI_WPCCR_ADMODE_SHIFT)
+
+#define OCTOSPI_WPCCR_ADTR              (1 << 11)   /* Bit 11: Address double transfer rate */
+
+#define OCTOSPI_WPCCR_ADSIZE_SHIFT      (12)        /* Bits 12-13: Address size */
+#define OCTOSPI_WPCCR_ADSIZE_MASK       (0x3 << OCTOSPI_WPCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ADSIZE(n)       ((uint32_t)(n) << OCTOSPI_WPCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ADSIZE_8b       (0 << OCTOSPI_WPCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ADSIZE_16b      (1 << OCTOSPI_WPCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ADSIZE_24b      (2 << OCTOSPI_WPCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ADSIZE_32b      (3 << OCTOSPI_WPCCR_ADSIZE_SHIFT)
+
+#define OCTOSPI_WPCCR_ABMODE_SHIFT      (16)        /* Bits 16-18: Alternate bytes mode */
+#define OCTOSPI_WPCCR_ABMODE_MASK       (0x7 << OCTOSPI_WPCCR_ABMODE_SHIFT)
+#  define OCTOSPI_WPCCR_ABMODE(n)       ((uint32_t)(n) << OCTOSPI_WPCCR_ABMODE_SHIFT)
+
+#define OCTOSPI_WPCCR_ABDTR              (1 << 19)   /* Bit 19: Alternate-byte double transfer rate */
+
+#define OCTOSPI_WPCCR_ABSIZE_SHIFT      (20)        /* Bits 20-21: Alternate bytes size */
+#define OCTOSPI_WPCCR_ABSIZE_MASK       (0x3 << OCTOSPI_WPCCR_ABSIZE_SHIFT)
+#  define OCTOSPI_WPCCR_ABSIZE(n)       ((uint32_t)(n) << OCTOSPI_WPCCR_ABSIZE_SHIFT)
+
+#define OCTOSPI_WPCCR_DMODE_SHIFT       (24)        /* Bits 24-25: Data mode */
+#define OCTOSPI_WPCCR_DMODE_MASK        (0x3 << OCTOSPI_WPCCR_DMODE_SHIFT)
+#  define OCTOSPI_WPCCR_DMODE(n)        ((uint32_t)(n) << OCTOSPI_WPCCR_DMODE_SHIFT)
+
+#define OCTOSPI_WPCCR_DDTR              (1 << 27)   /* Bit 27: Data double transfer rate */
+#define OCTOSPI_WPCCR_DQSE              (1 << 29)   /* Bit 29: DQS enable */
+
+/* Wrap Timing Configuration Register */
+
+#define OCTOSPI_WPTCR_DCYC_SHIFT        (0)        /* Bits 0-4: Number of dummy cycles */
+#define OCTOSPI_WPTCR_DCYC_MASK         (0x1f << OCTOSPI_WPTCR_DCYC_SHIFT)
+#  define OCTOSPI_WPTCR_DCYC(n)         ((uint32_t)(n) << OCTOSPI_WPTCR_DCYC_SHIFT)
+
+#define OCTOSPI_WPTCR_DHQC              (1 << 28)   /* Bit 28: Delay hold quarter cycle */
+#define OCTOSPI_WPTCR_SSHIFT            (1 << 30)   /* Bit 30: Sample Shift */
+
+/* Write Communication Configuration Register */
+
+#define WCCR_IMODE_NONE      0   /* No instruction */
+#define WCCR_IMODE_SINGLE    1   /* Instruction on a single line */
+#define WCCR_IMODE_DUAL      2   /* Instruction on two lines */
+#define WCCR_IMODE_QUAD      3   /* Instruction on four lines */
+
+#define WCCR_ADMODE_NONE     0   /* No address */
+#define WCCR_ADMODE_SINGLE   1   /* Address on a single line */
+#define WCCR_ADMODE_DUAL     2   /* Address on two lines */
+#define WCCR_ADMODE_QUAD     3   /* Address on four lines */
+
+#define WCCR_ADSIZE_8        0   /* 8-bit address */
+#define WCCR_ADSIZE_16       1   /* 16-bit address */
+#define WCCR_ADSIZE_24       2   /* 24-bit address */
+#define WCCR_ADSIZE_32       3   /* 32-bit address */
+
+#define WCCR_ABMODE_NONE     0   /* No alternate bytes */
+#define WCCR_ABMODE_SINGLE   1   /* Alternate bytes on a single line */
+#define WCCR_ABMODE_DUAL     2   /* Alternate bytes on two lines */
+#define WCCR_ABMODE_QUAD     3   /* Alternate bytes on four lines */
+
+#define WCCR_ABSIZE_8        0   /* 8-bit alternate byte */
+#define WCCR_ABSIZE_16       1   /* 16-bit alternate bytes */
+#define WCCR_ABSIZE_24       2   /* 24-bit alternate bytes */
+#define WCCR_ABSIZE_32       3   /* 32-bit alternate bytes */
+
+#define WCCR_DMODE_NONE      0   /* No data */
+#define WCCR_DMODE_SINGLE    1   /* Data on a single line */
+#define WCCR_DMODE_DUAL      2   /* Data on two lines */
+#define WCCR_DMODE_QUAD      3   /* Data on four lines */
+
+#define OCTOSPI_WCCR_IMODE_SHIFT       (0)        /* Bits 0-2: Instruction mode */
+#define OCTOSPI_WCCR_IMODE_MASK        (0x7 << OCTOSPI_WCCR_IMODE_SHIFT)
+#  define OCTOSPI_WCCR_IMODE(n)        ((uint32_t)(n) << OCTOSPI_WCCR_IMODE_SHIFT)
+
+#define OCTOSPI_WCCR_IDTR              (1 << 3)   /* Bit 3: Instruction double transfer rate */
+
+#define OCTOSPI_WCCR_ISIZE_SHIFT       (4)        /* Bits 4-5: Instruction size */
+#define OCTOSPI_WCCR_ISIZE_MASK        (0x3 << OCTOSPI_WCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WCCR_ISIZE_8b        (0 << OCTOSPI_WCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WCCR_ISIZE_16b       (1 << OCTOSPI_WCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WCCR_ISIZE_24b       (2 << OCTOSPI_WCCR_ISIZE_SHIFT)
+#  define OCTOSPI_WCCR_ISIZE_32b       (3 << OCTOSPI_WCCR_ISIZE_SHIFT)
+
+#define OCTOSPI_WCCR_ADMODE_SHIFT      (8)        /* Bits 10-11: Address mode */
+#define OCTOSPI_WCCR_ADMODE_MASK       (0x7 << OCTOSPI_WCCR_ADMODE_SHIFT)
+#  define OCTOSPI_WCCR_ADMODE(n)       ((uint32_t)(n) << OCTOSPI_WCCR_ADMODE_SHIFT)
+
+#define OCTOSPI_WCCR_ADTR              (1 << 11)   /* Bit 11: Address double transfer rate */
+
+#define OCTOSPI_WCCR_ADSIZE_SHIFT      (12)        /* Bits 12-13: Address size */
+#define OCTOSPI_WCCR_ADSIZE_MASK       (0x3 << OCTOSPI_WCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WCCR_ADSIZE(n)       ((uint32_t)(n) << OCTOSPI_WCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WCCR_ADSIZE_8b       (0 << OCTOSPI_WCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WCCR_ADSIZE_16b      (1 << OCTOSPI_WCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WCCR_ADSIZE_24b      (2 << OCTOSPI_WCCR_ADSIZE_SHIFT)
+#  define OCTOSPI_WCCR_ADSIZE_32b      (3 << OCTOSPI_WCCR_ADSIZE_SHIFT)
+
+#define OCTOSPI_WCCR_ABMODE_SHIFT      (16)        /* Bits 16-18: Alternate bytes mode */
+#define OCTOSPI_WCCR_ABMODE_MASK       (0x7 << OCTOSPI_WCCR_ABMODE_SHIFT)
+#  define OCTOSPI_WCCR_ABMODE(n)       ((uint32_t)(n) << OCTOSPI_WCCR_ABMODE_SHIFT)
+
+#define OCTOSPI_WCCR_ABDTR              (1 << 19)   /* Bit 19: Alternate-byte double transfer rate */
+
+#define OCTOSPI_WCCR_ABSIZE_SHIFT      (20)        /* Bits 20-21: Alternate bytes size */
+#define OCTOSPI_WCCR_ABSIZE_MASK       (0x3 << OCTOSPI_WCCR_ABSIZE_SHIFT)
+#  define OCTOSPI_WCCR_ABSIZE(n)       ((uint32_t)(n) << OCTOSPI_WCCR_ABSIZE_SHIFT)
+
+#define OCTOSPI_WCCR_DMODE_SHIFT       (24)        /* Bits 24-25: Data mode */
+#define OCTOSPI_WCCR_DMODE_MASK        (0x3 << OCTOSPI_WCCR_DMODE_SHIFT)
+#  define OCTOSPI_WCCR_DMODE(n)        ((uint32_t)(n) << OCTOSPI_WCCR_DMODE_SHIFT)
+
+#define OCTOSPI_WCCR_DDTR              (1 << 27)   /* Bit 27: Data double transfer rate */
+#define OCTOSPI_WCCR_DQSE              (1 << 29)   /* Bit 29: DQS enable */
+
+/* Writing Timing Configuration Register */
+
+#define OCTOSPI_WTCR_DCYC_SHIFT        (0)        /* Bits 0-4: Number of dummy cycles */
+#define OCTOSPI_WTCR_DCYC_MASK         (0x1f << OCTOSPI_WTCR_DCYC_SHIFT)
+#  define OCTOSPI_WTCR_DCYC(n)         ((uint32_t)(n) << OCTOSPI_WTCR_DCYC_SHIFT)
+
+/* HyperBus Latency Configuration Register */ 
+
+#define OCTOSPI_HLCR_LM                (1 << 0) /* Bit 0: Latency Mode */
+#define OCTOSPI_HLCR_WZL               (1 << 1) /* Bit 1: Write Zero Latency */
+
+#define OCTOSPI_HLCR_TACC_SHIFT       (8)        /* Bits 8-15: Access Timing */
+#define OCTOSPI_HLCR_TACC_MASK        (0xff << OCTOSPI_HLCR_TACC_SHIFT)
+#  define OCTOSPI_HLCR_TACC(n)        ((uint32_t)(n) << OCTOSPI_HLCR_TACC_SHIFT)
+
+#define OCTOSPI_HLCR_TRWR_SHIFT       (16)        /* Bits 16-23: Read-write minimum recovery time */
+#define OCTOSPI_HLCR_TRWR_MASK        (0xff << OCTOSPI_HLCR_TRWR_SHIFT)
+#  define OCTOSPI_HLCR_TRWR(n)        ((uint32_t)(n) << OCTOSPI_HLCR_TRWR_SHIFT)
 
 /****************************************************************************
  * Public Types
