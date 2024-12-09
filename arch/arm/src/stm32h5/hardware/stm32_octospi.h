@@ -467,7 +467,7 @@
 #define OCTOSPI_WTCR_DCYC_MASK         (0x1f << OCTOSPI_WTCR_DCYC_SHIFT)
 #  define OCTOSPI_WTCR_DCYC(n)         ((uint32_t)(n) << OCTOSPI_WTCR_DCYC_SHIFT)
 
-/* HyperBus Latency Configuration Register */ 
+/* HyperBus Latency Configuration Register */
 
 #define OCTOSPI_HLCR_LM                (1 << 0) /* Bit 0: Latency Mode */
 #define OCTOSPI_HLCR_WZL               (1 << 1) /* Bit 1: Write Zero Latency */
