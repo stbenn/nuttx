@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/arm/src/rp2040/rp2040_adc.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -38,7 +40,7 @@
  *
  *    -------------
  *
- *    This lower-half supports multiple drivers (/dev/adc0, /dav/dca1, etc.)
+ *    This lower-half supports multiple drivers (/dev/adc0, /dev/adc1, etc.)
  *    that each may read data from any of the ADC ports.  The driver reads
  *    whichever ADC ports are needed by ANY of ther drivers in strict
  *    round-robin fashion, passing the converted values to the drivers that

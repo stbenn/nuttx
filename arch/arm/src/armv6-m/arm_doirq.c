@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/arm/src/armv6-m/arm_doirq.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -63,7 +65,7 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
    * is invalid, and we can safely overwrite it.
    */
 
-  if (!(NVIC_IRQ_SVCALL == irq && regs[REG_R0] == SYS_restore_context))
+  if (*running_task != NULL)
     {
       tcb->xcp.regs = regs;
     }
