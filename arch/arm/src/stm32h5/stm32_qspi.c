@@ -236,7 +236,6 @@ struct qspi_xctnspec_s
   void     *buffer;       /* Data buffer */
 
   uint8_t isddr;          /* true if 'double data rate' */
-  uint8_t issioo;         /* true if 'send instruction only once' mode */
 
 #ifdef CONFIG_STM32H5_QSPI_INTERRUPTS
   uint8_t function;       /* functional mode; to distinguish a read or write */
@@ -537,7 +536,7 @@ static void qspi_dumpregs(struct stm32_qspidev_s *priv, const char *msg)
           (regval & QSPI_CCR_ABSIZE_MASK) >> QSPI_CCR_ABSIZE_SHIFT,
           (regval & QSPI_CCR_DCYC_MASK) >> QSPI_CCR_DCYC_SHIFT,
           (regval & QSPI_CCR_DMODE_MASK) >> QSPI_CCR_DMODE_SHIFT,
-          (regval & QSPI_CCR_FMODE_MASK) >> QSPI_CCR_FMODE_SHIFT,
+          (regval & QSPI_CR_FMODE_MASK) >> QSPI_CR_FMODE_SHIFT,
           (regval & QSPI_CCR_SIOO) ? 1 : 0,
           (regval & QSPI_CCR_DDRM) ? 1 : 0);
 
@@ -787,10 +786,6 @@ static int qspi_setupxctnfromcmd(struct qspi_xctnspec_s *xctn,
 
   xctn->instr = cmdinfo->cmd;
 
-  /* XXX III option bits for 'send instruction only once' */
-
-  xctn->issioo = 0;
-
   /* XXX III options for alt bytes, dummy cycles */
 
   xctn->altbytesmode = CCR_ABMODE_NONE;
@@ -857,8 +852,8 @@ static int qspi_setupxctnfromcmd(struct qspi_xctnspec_s *xctn,
     }
 
 #if defined(CONFIG_STM32H5_QSPI_INTERRUPTS)
-  xctn->function = QSPICMD_ISWRITE(cmdinfo->flags) ? CCR_FMODE_INDWR :
-                                                     CCR_FMODE_INDRD;
+  xctn->function = QSPICMD_ISWRITE(cmdinfo->flags) ? CR_FMODE_INDWR :
+                                                     CR_FMODE_INDRD;
   xctn->disposition = - EIO;
   xctn->idxnow = 0;
 #endif
@@ -917,10 +912,6 @@ static int qspi_setupxctnfrommem(struct qspi_xctnspec_s *xctn,
     }
 
   xctn->instr = meminfo->cmd;
-
-  /* XXX III option bits for 'send instruction only once' */
-
-  xctn->issioo = 0;
 
   /* XXX III options for alt bytes */
 
@@ -1000,8 +991,8 @@ static int qspi_setupxctnfrommem(struct qspi_xctnspec_s *xctn,
   xctn->isddr = 0;
 
 #if defined(CONFIG_STM32H5_QSPI_INTERRUPTS)
-  xctn->function = QSPIMEM_ISWRITE(meminfo->flags) ? CCR_FMODE_INDWR :
-                                                     CCR_FMODE_INDRD;
+  xctn->function = QSPIMEM_ISWRITE(meminfo->flags) ? CR_FMODE_INDWR :
+                                                     CR_FMODE_INDRD;
   xctn->disposition = - EIO;
   xctn->idxnow = 0;
 #endif
@@ -1102,21 +1093,28 @@ static void qspi_ccrconfig(struct stm32_qspidev_s *priv,
     }
 
   /* Build the CCR value and set it */
-  /* TODO - SIOO and DDDRM not defined, Remove and follow impact */
-  /* Also, SIOO and DDRM appear to be on the wrong lines */
 
-  regval  = QSPI_CCR_INST(xctn->instr) |
-            QSPI_CCR_IMODE(xctn->instrmode) |
+  regval  = QSPI_CCR_IMODE(xctn->instrmode) |
             QSPI_CCR_ADMODE(xctn->addrmode) |
             QSPI_CCR_ADSIZE(xctn->addrsize) |
             QSPI_CCR_ABMODE(xctn->altbytesmode) |
             QSPI_CCR_ABSIZE(xctn->altbytessize) |
-            QSPI_CCR_DCYC(xctn->dummycycles) |
             QSPI_CCR_DMODE(xctn->datamode) |
-            QSPI_CCR_FMODE(fctn) |
-            (xctn->isddr ? QSPI_CCR_SIOO : 0) |
-            (xctn->issioo ? QSPI_CCR_DDRM : 0);
+            (xctn->isddr ? QSPI_CCR_DDTR : 0) |
+            (xctn->isddr ? QSPI_CCR_ABDTR : 0) |
+            (xctn->isddr ? QSPI_CCR_ADDTR : 0);
   qspi_putreg(priv, regval, STM32_QUADSPI_CCR_OFFSET);
+
+  regval = qspi_getreg(priv, STM32_QUADSPI_CR_OFFSET);
+  regval = (regval & QSPI_CR_FMODE_MASK) | QSPI_CR_FMODE(fctn);
+  qspi_putreg(priv, regval, STM32_QUADSPI_CR_OFFSET);
+
+  regval = qspi_getreg(priv, STM32_QUADSPI_TCR_OFFSET);
+  regval = (regval & QSPI_TCR_DCYC_MASK) | QSPI_TCR_DCYC(xctn->dummycycles);
+  qspi_putreg(priv, regval, STM32_QUADSPI_TCR_OFFSET);
+
+  regval = QSPI_IR_INST(xctn->instr);
+  qspi_putreg(priv, regval, STM32_QUADSPI_IR_OFFSET);
 
   /* If we have and need and address, set that now, too */
 
@@ -1161,7 +1159,7 @@ static int qspi0_interrupt(int irq, void *context, void *arg)
       volatile uint32_t *datareg =
         (volatile uint32_t *)(g_qspi0dev.base + STM32_QUADSPI_DR_OFFSET);
 
-      if (g_qspi0dev.xctn->function == CCR_FMODE_INDWR)
+      if (g_qspi0dev.xctn->function == CR_FMODE_INDWR)
         {
           /* Write data until we have no more or have no place to put it */
 
@@ -1183,7 +1181,7 @@ static int qspi0_interrupt(int irq, void *context, void *arg)
                 }
             }
         }
-      else if (g_qspi0dev.xctn->function == CCR_FMODE_INDRD)
+      else if (g_qspi0dev.xctn->function == CR_FMODE_INDRD)
         {
           /* Read data until we have no more or have no place to put it */
 
@@ -1224,7 +1222,7 @@ static int qspi0_interrupt(int irq, void *context, void *arg)
 
       /* Do the last bit of read if needed */
 
-      if (g_qspi0dev.xctn->function == CCR_FMODE_INDRD)
+      if (g_qspi0dev.xctn->function == CR_FMODE_INDRD)
         {
           volatile uint32_t *datareg =
             (volatile uint32_t *)(g_qspi0dev.base + STM32_QUADSPI_DR_OFFSET);
@@ -1522,8 +1520,8 @@ static int qspi_memory_dma(struct stm32_qspidev_s *priv,
   /* Set up the Communications Configuration Register as per command info */
 
   qspi_ccrconfig(priv, xctn,
-                 QSPIMEM_ISWRITE(meminfo->flags) ? CCR_FMODE_INDWR :
-                                                   CCR_FMODE_INDRD);
+                 QSPIMEM_ISWRITE(meminfo->flags) ? CR_FMODE_INDWR :
+                                                   CR_FMODE_INDRD);
 
   /* Start the DMA */
 
@@ -1659,7 +1657,7 @@ static int qspi_receive_blocking(struct stm32_qspidev_s *priv,
 
       regval  = qspi_getreg(priv, STM32_QUADSPI_CCR_OFFSET);
       regval &= ~QSPI_CR_FMODE_MASK;
-      regval |= QSPI_CCR_FMODE(CR_FMODE_INDRD);
+      regval |= QSPI_CR_FMODE(CR_FMODE_INDRD);
       qspi_putreg(priv, regval, STM32_QUADSPI_CCR_OFFSET);
 
       /* Start the transfer by re-writing the address in AR register */
@@ -2074,7 +2072,7 @@ static int qspi_command(struct qspi_dev_s *dev,
            * info
            */
 
-          qspi_ccrconfig(priv, &xctn, CCR_FMODE_INDWR);
+          qspi_ccrconfig(priv, &xctn, CR_FMODE_INDWR);
 
           /* Enable 'Transfer Error' 'FIFO Threshhold' and
            * 'Transfer Complete' interrupts.
@@ -2095,7 +2093,7 @@ static int qspi_command(struct qspi_dev_s *dev,
            * info
            */
 
-          qspi_ccrconfig(priv, &xctn, CCR_FMODE_INDRD);
+          qspi_ccrconfig(priv, &xctn, CR_FMODE_INDRD);
 
           /* Start the transfer by re-writing the address in AR register */
 
@@ -2128,7 +2126,7 @@ static int qspi_command(struct qspi_dev_s *dev,
        * info
        */
 
-      qspi_ccrconfig(priv, &xctn, CCR_FMODE_INDWR);
+      qspi_ccrconfig(priv, &xctn, CR_FMODE_INDWR);
     }
 
   /* Wait for the interrupt routine to finish it's magic */
@@ -2148,7 +2146,6 @@ static int qspi_command(struct qspi_dev_s *dev,
   /* Polling mode */
 
   /* Set up the Communications Configuration Register as per command info */
-  /* TODO - FMODE is in CR, not CCR */
   qspi_ccrconfig(priv, &xctn, CR_FMODE_INDWR);
 
   /* That may be it, unless there is also data to transfer */
@@ -2253,8 +2250,6 @@ static int qspi_memory(struct qspi_dev_s *dev,
        * info
        */
   
-      /* TODO - FMODE is in CR, not CCR */
-
       qspi_ccrconfig(priv, &xctn, CR_FMODE_INDWR);
 
       /* Enable 'Transfer Error' 'FIFO Threshhold' and 'Transfer Complete'
@@ -2276,7 +2271,7 @@ static int qspi_memory(struct qspi_dev_s *dev,
        * info
        */
 
-      qspi_ccrconfig(priv, &xctn, CCR_FMODE_INDRD);
+      qspi_ccrconfig(priv, &xctn, CR_FMODE_INDRD);
 
       /* Start the transfer by re-writing the address in AR register */
 
@@ -2319,8 +2314,8 @@ static int qspi_memory(struct qspi_dev_s *dev,
        */
 
       qspi_ccrconfig(priv, &xctn,
-                     QSPIMEM_ISWRITE(meminfo->flags) ? CCR_FMODE_INDWR :
-                                                       CCR_FMODE_INDRD);
+                     QSPIMEM_ISWRITE(meminfo->flags) ? CR_FMODE_INDWR :
+                                                       CR_FMODE_INDRD);
 
       /* Transfer data */
 
@@ -2348,7 +2343,6 @@ static int qspi_memory(struct qspi_dev_s *dev,
   /* polling mode */
 
   /* Set up the Communications Configuration Register as per command info */
-  /* TODO - FMODE is in CR, not CCR */
 
   qspi_ccrconfig(priv, &xctn,
                  QSPIMEM_ISWRITE(meminfo->flags) ? CR_FMODE_INDWR :
@@ -2487,13 +2481,15 @@ static int qspi_hw_initialize(struct stm32_qspidev_s *priv)
   qspi_waitstatusflags(priv, QSPI_SR_BUSY, 0);
 
   /* Configure QSPI Clock Prescaler and Sample Shift */
-  /* TODO - SSHIFT and PRESCALER on different registers */
 
   regval  = qspi_getreg(priv, STM32_QUADSPI_CR_OFFSET);
-  regval &= ~(QSPI_DCR2_PRESCALER_MASK | QSPI_TCR_SSHIFT);
+  regval &= ~(QSPI_DCR2_PRESCALER_MASK);
   regval |= (0x01 << QSPI_DCR2_PRESCALER_SHIFT);
-  regval |= (0x00);
   qspi_putreg(priv, regval, STM32_QUADSPI_CR_OFFSET);
+
+  regval  = qspi_getreg(priv, STM32_QUADSPI_TCR_OFFSET);
+  regval &= ~(QSPI_TCR_SSHIFT);
+  qspi_putreg(priv, regval, STM32_QUADSPI_TCR_OFFSET);
 
   /* Configure QSPI Flash Size, CS High Time and Clock Mode */
 

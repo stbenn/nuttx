@@ -191,9 +191,9 @@
 
 /* Instruction Register */
 
-#define QSPI_IR_INSTRUCTION_SHIFT (0)        /* Bits 0-7: Instruction */
-#define QSPI_IR_INSTRUCTION_MASK  (0xFFFFffff << QSPI_CCR_INSTRUCTION_SHIFT)
-#  define QSPI_IR_INST(n)         ((uint32_t)(n) << QSPI_CCR_INSTRUCTION_SHIFT)
+#define QSPI_IR_INST_SHIFT        (0)        /* Bits 0-31: Instruction */
+#define QSPI_IR_INST_MASK         (0xFFFFffff << QSPI_IR_INST_SHIFT)
+#  define QSPI_IR_INST(n)         ((uint32_t)(n) << QSPI_IR_INST_SHIFT)
 
 /* Communication Configuration Register */
 
@@ -244,7 +244,7 @@
 #define QSPI_CCR_ADMODE_MASK       (0x7 << QSPI_CCR_ADMODE_SHIFT)
 #  define QSPI_CCR_ADMODE(n)       ((uint32_t)(n) << QSPI_CCR_ADMODE_SHIFT)
 
-#define QSPI_CCR_ADTR              (1 << 11)   /* Bit 11: Address double transfer rate */
+#define QSPI_CCR_ADDTR             (1 << 11)   /* Bit 11: Address double transfer rate */
 
 #define QSPI_CCR_ADSIZE_SHIFT      (12)        /* Bits 12-13: Address size */
 #define QSPI_CCR_ADSIZE_MASK       (0x3 << QSPI_CCR_ADSIZE_SHIFT)
