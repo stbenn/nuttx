@@ -1109,7 +1109,7 @@ static void qspi_ccrconfig(struct stm32_qspidev_s *priv,
   qspi_putreg(priv, regval, STM32_QUADSPI_CCR_OFFSET);
 
   regval = qspi_getreg(priv, STM32_QUADSPI_CR_OFFSET);
-  regval = (regval & QSPI_CR_FMODE_MASK) | QSPI_CR_FMODE(fctn);
+  regval = (regval & ~(QSPI_CR_FMODE_MASK)) | QSPI_CR_FMODE(fctn);
   qspi_putreg(priv, regval, STM32_QUADSPI_CR_OFFSET);
 
   regval = qspi_getreg(priv, STM32_QUADSPI_TCR_OFFSET);
@@ -1658,16 +1658,22 @@ static int qspi_receive_blocking(struct stm32_qspidev_s *priv,
 
       /* Ensure CCR register specifies indirect read */
 
-      regval  = qspi_getreg(priv, STM32_QUADSPI_CCR_OFFSET);
+      regval  = qspi_getreg(priv, STM32_QUADSPI_CR_OFFSET);
       regval &= ~QSPI_CR_FMODE_MASK;
       regval |= QSPI_CR_FMODE(CR_FMODE_INDRD);
-      qspi_putreg(priv, regval, STM32_QUADSPI_CCR_OFFSET);
+      qspi_putreg(priv, regval, STM32_QUADSPI_CR_OFFSET);
 
       /* Start the transfer by re-writing the address in AR register */
+      if (xctn->addrmode == CCR_ADMODE_NONE)
+        {
+          qspi_putreg(priv, QSPI_IR_INST(xctn->instr), STM32_QUADSPI_IR_OFFSET);
+        }
+      else
+        {
+          qspi_putreg(priv, addrval, STM32_QUADSPI_AR_OFFSET);
+        }
 
-      qspi_putreg(priv, addrval, STM32_QUADSPI_AR_OFFSET);
 
-      /* Transfer loop */
 
       while (remaining > 0)
         {
@@ -1883,10 +1889,10 @@ static uint32_t qspi_setfrequency(struct qspi_dev_s *dev, uint32_t frequency)
 
   /* Save the new prescaler value (minus one) */
 
-  regval  = qspi_getreg(priv, STM32_QUADSPI_CR_OFFSET);
+  regval  = qspi_getreg(priv, STM32_QUADSPI_DCR2_OFFSET);
   regval &= ~(QSPI_DCR2_PRESCALER_MASK);
   regval |= (prescaler - 1) << QSPI_DCR2_PRESCALER_SHIFT;
-  qspi_putreg(priv, regval, STM32_QUADSPI_CR_OFFSET);
+  qspi_putreg(priv, regval, STM32_QUADSPI_DCR2_OFFSET);
 
   /* Calculate the new actual frequency */
 
@@ -2149,7 +2155,6 @@ static int qspi_command(struct qspi_dev_s *dev,
   /* Polling mode */
 
   /* Set up the Communications Configuration Register as per command info */
-  qspi_ccrconfig(priv, &xctn, CR_FMODE_INDWR);
 
   /* That may be it, unless there is also data to transfer */
 
@@ -2160,10 +2165,12 @@ static int qspi_command(struct qspi_dev_s *dev,
 
       if (QSPICMD_ISWRITE(cmdinfo->flags))
         {
+          qspi_ccrconfig(priv, &xctn, CR_FMODE_INDWR);
           ret = qspi_transmit_blocking(priv, &xctn);
         }
       else
         {
+          qspi_ccrconfig(priv, &xctn, CR_FMODE_INDWR);
           ret = qspi_receive_blocking(priv, &xctn);
         }
 
@@ -2485,10 +2492,10 @@ static int qspi_hw_initialize(struct stm32_qspidev_s *priv)
 
   /* Configure QSPI Clock Prescaler and Sample Shift */
 
-  regval  = qspi_getreg(priv, STM32_QUADSPI_CR_OFFSET);
+  regval  = qspi_getreg(priv, STM32_QUADSPI_DCR2_OFFSET);
   regval &= ~(QSPI_DCR2_PRESCALER_MASK);
   regval |= (0x01 << QSPI_DCR2_PRESCALER_SHIFT);
-  qspi_putreg(priv, regval, STM32_QUADSPI_CR_OFFSET);
+  qspi_putreg(priv, regval, STM32_QUADSPI_DCR2_OFFSET);
 
   regval  = qspi_getreg(priv, STM32_QUADSPI_TCR_OFFSET);
   regval &= ~(QSPI_TCR_SSHIFT);
