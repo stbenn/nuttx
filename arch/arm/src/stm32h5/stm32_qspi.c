@@ -1113,7 +1113,7 @@ static void qspi_ccrconfig(struct stm32_qspidev_s *priv,
   qspi_putreg(priv, regval, STM32_QUADSPI_CR_OFFSET);
 
   regval = qspi_getreg(priv, STM32_QUADSPI_TCR_OFFSET);
-  regval = (regval & QSPI_TCR_DCYC_MASK) | QSPI_TCR_DCYC(xctn->dummycycles);
+  regval = (regval & ~(QSPI_TCR_DCYC_MASK)) | QSPI_TCR_DCYC(xctn->dummycycles);
   qspi_putreg(priv, regval, STM32_QUADSPI_TCR_OFFSET);
 
   regval = QSPI_IR_INST(xctn->instr);
