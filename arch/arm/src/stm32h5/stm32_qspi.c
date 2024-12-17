@@ -491,73 +491,9 @@ static void qspi_dumpregs(struct stm32_qspidev_s *priv, const char *msg)
 {
   spiinfo("%s:\n", msg);
 
-#if 0
-  uint32_t regval;
-
-  /* this extra verbose output may be helpful in some cases; you'll need
-   * to make sure your syslog is large enough to accommodate extra output.
-   */
-
-  regval = getreg32(priv->base + STM32_QUADSPI_CR_OFFSET);    /* Control Register */
-  spiinfo("CR:%08x\n", regval);
-  spiinfo("  EN:%1d ABORT:%1d DMAEN:%1d TCEN:%1d SSHIFT:%1d\n"
-          "  FTHRES: %d\n"
-          "  TEIE:%1d TCIE:%1d FTIE:%1d SMIE:%1d TOIE:%1d APMS:%1d PMM:%1d\n"
-          "  PRESCALER: %d\n",
-          (regval & QSPI_CR_EN) ? 1 : 0,
-          (regval & QSPI_CR_ABORT) ? 1 : 0,
-          (regval & QSPI_CR_DMAEN) ? 1 : 0,
-          (regval & QSPI_CR_TCEN) ? 1 : 0,
-          (regval & QSPI_CR_SSHIFT) ? 1 : 0,
-          (regval & QSPI_CR_FTHRES_MASK) >> QSPI_CR_FTHRES_SHIFT,
-          (regval & QSPI_CR_TEIE) ? 1 : 0,
-          (regval & QSPI_CR_TCIE) ? 1 : 0,
-          (regval & QSPI_CR_FTIE) ? 1 : 0,
-          (regval & QSPI_CR_SMIE) ? 1 : 0,
-          (regval & QSPI_CR_TOIE) ? 1 : 0,
-          (regval & QSPI_CR_APMS) ? 1 : 0,
-          (regval & QSPI_CR_PMM) ? 1 : 0,
-          (regval & QSPI_CR_PRESCALER_MASK) >> QSPI_CR_PRESCALER_SHIFT);
-
-  regval = getreg32(priv->base + STM32_QUADSPI_DCR_OFFSET);   /* Device Configuration Register */
-  spiinfo("DCR:%08x\n", regval);
-  spiinfo("  CKMODE:%1d CSHT:%d FSIZE:%d\n",
-          (regval & QSPI_DCR_CKMODE) ? 1 : 0,
-          (regval & QSPI_DCR_CSHT_MASK) >> QSPI_DCR_CSHT_SHIFT,
-          (regval & QSPI_DCR_FSIZE_MASK) >> QSPI_DCR_FSIZE_SHIFT);
-
-  regval = getreg32(priv->base + STM32_QUADSPI_CCR_OFFSET);   /* Communication Configuration Register */
-  spiinfo("CCR:%08x\n", regval);
-  spiinfo("   INST:%02x IMODE:%d ADMODE:%d ADSIZE:%d ABMODE:%d\n"
-          "   ABSIZE:%d DCYC:%d DMODE:%d FMODE:%d\n"
-          "   SIOO:%1d DDRM:%1d\n",
-          (regval & QSPI_CCR_INSTRUCTION_MASK) >> QSPI_CCR_INSTRUCTION_SHIFT,
-          (regval & QSPI_CCR_IMODE_MASK) >> QSPI_CCR_IMODE_SHIFT,
-          (regval & QSPI_CCR_ADMODE_MASK) >> QSPI_CCR_ADMODE_SHIFT,
-          (regval & QSPI_CCR_ADSIZE_MASK) >> QSPI_CCR_ADSIZE_SHIFT,
-          (regval & QSPI_CCR_ABMODE_MASK) >> QSPI_CCR_ABMODE_SHIFT,
-          (regval & QSPI_CCR_ABSIZE_MASK) >> QSPI_CCR_ABSIZE_SHIFT,
-          (regval & QSPI_CCR_DCYC_MASK) >> QSPI_CCR_DCYC_SHIFT,
-          (regval & QSPI_CCR_DMODE_MASK) >> QSPI_CCR_DMODE_SHIFT,
-          (regval & QSPI_CR_FMODE_MASK) >> QSPI_CR_FMODE_SHIFT,
-          (regval & QSPI_CCR_SIOO) ? 1 : 0,
-          (regval & QSPI_CCR_DDRM) ? 1 : 0);
-
-  regval = getreg32(priv->base + STM32_QUADSPI_SR_OFFSET);    /* Status Register */
-  spiinfo("SR:%08x\n", regval);
-  spiinfo("  TEF:%1d TCF:%1d FTF:%1d SMF:%1d TOF:%1d BUSY:%1d FLEVEL:%d\n",
-          (regval & QSPI_SR_TEF) ? 1 : 0,
-          (regval & QSPI_SR_TCF) ? 1 : 0,
-          (regval & QSPI_SR_FTF) ? 1 : 0,
-          (regval & QSPI_SR_SMF) ? 1 : 0,
-          (regval & QSPI_SR_TOF) ? 1 : 0,
-          (regval & QSPI_SR_BUSY) ? 1 : 0,
-          (regval & QSPI_SR_FLEVEL_MASK) >> QSPI_SR_FLEVEL_SHIFT);
-
-#else
-  spiinfo("    CR:%08x   DCR:%08x   CCR:%08x    SR:%08x\n",
+  spiinfo("    CR:%08x   TCR:%08x   CCR:%08x    SR:%08x\n",
           getreg32(priv->base + STM32_QUADSPI_CR_OFFSET),     /* Control Register */
-          getreg32(priv->base + STM32_QUADSPI_DCR_OFFSET),    /* Device Configuration Register */
+          getreg32(priv->base + STM32_QUADSPI_TCR_OFFSET),   /* Device Configuration Register 1 */
           getreg32(priv->base + STM32_QUADSPI_CCR_OFFSET),    /* Communication Configuration Register */
           getreg32(priv->base + STM32_QUADSPI_SR_OFFSET));    /* Status Register */
   spiinfo("   DLR:%08x   ABR:%08x PSMKR:%08x PSMAR:%08x\n",
@@ -565,10 +501,14 @@ static void qspi_dumpregs(struct stm32_qspidev_s *priv, const char *msg)
           getreg32(priv->base + STM32_QUADSPI_ABR_OFFSET),    /* Alternate Bytes Register */
           getreg32(priv->base + STM32_QUADSPI_PSMKR_OFFSET),  /* Polling Status mask Register */
           getreg32(priv->base + STM32_QUADSPI_PSMAR_OFFSET)); /* Polling Status match Register */
-  spiinfo("   PIR:%08x  LPTR:%08x\n",
+  spiinfo("   PIR:%08x  LPTR:%08x DCR1:%08x DCR2:%08x\n",
           getreg32(priv->base + STM32_QUADSPI_PIR_OFFSET),    /* Polling Interval Register */
-          getreg32(priv->base + STM32_QUADSPI_LPTR_OFFSET));  /* Low-Power Timeout Register */
-#endif
+          getreg32(priv->base + STM32_QUADSPI_LPTR_OFFSET),  /* Low-Power Timeout Register */
+          getreg32(priv->base + STM32_QUADSPI_DCR1_OFFSET),  /* Device Configuration Register 1 */
+          getreg32(priv->base + STM32_QUADSPI_DCR2_OFFSET));  /* Device Configuration Register 2 */
+  spiinfo("   DCR3:%08x  DCR4:%08x\n",
+          getreg32(priv->base + STM32_QUADSPI_DCR3_OFFSET),  /* Device Configuration Register 3 */
+          getreg32(priv->base + STM32_QUADSPI_DCR4_OFFSET));  /* Device Configuration Register 4 */
 }
 #endif
 
@@ -1130,7 +1070,7 @@ static void qspi_ccrconfig(struct stm32_qspidev_s *priv,
    * ADMODE == 000 & (FMODE = 01 | DMODE = 000)
    */
 
-  regval = QSPI_IR_INST(xctn->instr);
+  regval = xctn->instr;
   qspi_putreg(priv, regval, STM32_QUADSPI_IR_OFFSET);
 
   /* If we have and need and address, set that now, too */
