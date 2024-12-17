@@ -288,6 +288,9 @@ struct qspi_cmdinfo_s
   uint16_t  buflen;      /* Data buffer length in bytes (if QSPICMD_DATA) */
   uint32_t  addr;        /* Address (if QSPICMD_ADDRESS) */
   FAR void *buffer;      /* Data buffer (if QSPICMD_DATA) */
+  uint32_t  altbytes;    /* Alternate Bytes Value */
+  uint8_t   altsize;     /* Number of Alternate Bytes */
+  uint8_t   altmode;     /* None, Single, Dual, Quad */
 };
 
 /* This structure describes one memory transfer */
@@ -302,6 +305,9 @@ struct qspi_meminfo_s
   uint32_t  addr;        /* Memory Address */
   uint32_t  key;         /* Scrambler key */
   FAR void *buffer;      /* Data buffer */
+  uint32_t  altbytes;    /* Alternate Bytes Value */
+  uint8_t   altsize;     /* Number of Alternate Bytes */
+  uint8_t   altmode;     /* None, Single, Dual, Quad */
 };
 
 #ifdef CONFIG_QSPI_HWFEATURES
