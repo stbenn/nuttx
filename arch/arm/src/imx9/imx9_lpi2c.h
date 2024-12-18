@@ -1,7 +1,8 @@
 /****************************************************************************
- * boards/risc-v/esp32c6/common/src/esp_board_qencoder.c
+ * arch/arm/src/imx9/imx9_lpi2c.h
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: 2024 NXP
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,80 +21,54 @@
  *
  ****************************************************************************/
 
+#ifndef __ARCH_ARM_SRC_IMX9_IMX9_LPI2C_H
+#define __ARCH_ARM_SRC_IMX9_IMX9_LPI2C_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <errno.h>
-#include <debug.h>
-#include <stdio.h>
-
-#include <nuttx/sensors/qencoder.h>
-#include <arch/board/board.h>
-
-#include "espressif/esp_qencoder.h"
+#include <nuttx/i2c/i2c_master.h>
 
 /****************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Name: board_qencoder_initialize
+ * Name: imx9_i2cbus_initialize
  *
  * Description:
- *   Initialize the quadrature encoder driver
+ *   Initialize the selected I2C port. And return a unique instance of struct
+ *   struct i2c_master_s.  This function may be called to obtain multiple
+ *   instances of the interface, each of which may be set up with a
+ *   different frequency and slave address.
+ *
+ * Input Parameters:
+ *   Port number (for hardware that has multiple I2C interfaces)
+ *
+ * Returned Value:
+ *   Valid I2C device structure reference on success; a NULL on failure
  *
  ****************************************************************************/
 
-int board_qencoder_initialize(void)
-{
-  int ret;
-  char devpath[12];
-  int devno = 0;
+struct i2c_master_s *imx9_i2cbus_initialize(int port);
 
-  /* Initialize a quadrature encoder interface. */
-#ifdef CONFIG_ESP_PCNT_U0_QE
-  snprintf(devpath, sizeof(devpath), "/dev/qe%d", devno++);
-  ret = esp_qeinitialize(devpath, 0);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: esp_qeinitialize failed: %d\n", ret);
-      return ret;
-    }
-#endif
+/****************************************************************************
+ * Name: imx9_i2cbus_uninitialize
+ *
+ * Description:
+ *   De-initialize the selected I2C port, and power down the device.
+ *
+ * Input Parameters:
+ *   Device structure as returned by the imx9_i2cbus_initialize()
+ *
+ * Returned Value:
+ *   OK on success, ERROR when internal reference count mismatch or dev
+ *   points to invalid hardware device.
+ *
+ ****************************************************************************/
 
-#ifdef CONFIG_ESP_PCNT_U1_QE
-  snprintf(devpath, sizeof(devpath), "/dev/qe%d", devno++);
-  ret = esp_qeinitialize(devpath, 1);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: esp_qeinitialize failed: %d\n", ret);
-      return ret;
-    }
-#endif
+int imx9_i2cbus_uninitialize(struct i2c_master_s *dev);
 
-#ifdef CONFIG_ESP_PCNT_U2_QE
-  snprintf(devpath, sizeof(devpath), "/dev/qe%d", devno++);
-  ret = esp_qeinitialize(devpath, 2);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: esp_qeinitialize failed: %d\n", ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_ESP_PCNT_U3_QE
-  snprintf(devpath, sizeof(devpath), "/dev/qe%d", devno++);
-  ret = esp_qeinitialize(devpath, 3);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: esp_qeinitialize failed: %d\n", ret);
-      return ret;
-    }
-#endif
-
-  return ret;
-}
-
+#endif /* __ARCH_ARM_SRC_IMX9_IMX9_LPI2C_H */

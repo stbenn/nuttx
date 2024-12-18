@@ -1,7 +1,7 @@
 /****************************************************************************
- * boards/risc-v/esp32c6/common/include/esp_board_qencoder.h
+ * arch/arm64/src/bcm2711/bcm2711_i2c.h
  *
- * SPDX-License-Identifier: Apache-2.0
+ * Author: Matteo Golin <matteo.golin@gmail.com>
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,57 +20,45 @@
  *
  ****************************************************************************/
 
-#ifndef __BOARDS_RISC_V_ESP32C6_COMMON_INCLUDE_ESP_BOARD_QENCODER_H
-#define __BOARDS_RISC_V_ESP32C6_COMMON_INCLUDE_ESP_BOARD_QENCODER_H
+#ifndef __ARCH_ARM64_SRC_BCM2711_BCM2711_I2C_H
+#define __ARCH_ARM64_SRC_BCM2711_BCM2711_I2C_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
+#include "hardware/bcm2711_bsc.h"
 #include <nuttx/config.h>
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Types
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
-
-/****************************************************************************
- * Inline Functions
- ****************************************************************************/
+#include <nuttx/i2c/i2c_master.h>
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Name: board_qencoder_initialize
+ * Name: bcm2711_i2cbus_initialize
  *
  * Description:
- *   Initialize the quadrature encoder driver for the given timer
+ *   Initialise an I2C device for the BCM2711.
+ *
+ * Input parameters:
+ *     port - The bus number for the I2C interface.
  *
  ****************************************************************************/
 
-int board_qencoder_initialize(void);
+struct i2c_master_s *bcm2711_i2cbus_initialize(int port);
 
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
+/****************************************************************************
+ * Name: bcm2711_i2cbus_uninitialize
+ *
+ * Description:
+ *   Uninitialize an I2C device on the BCM2711.
+ *
+ * Input parameters;
+ *     dev - The device to uninitialize.
+ *
+ ****************************************************************************/
 
-#endif /* __BOARDS_RISC_V_ESP32C6_COMMON_INCLUDE_ESP_BOARD_QENCODER_H */
+int bcm2711_i2cbus_uninitialize(struct i2c_master_s *dev);
 
+#endif // __ARCH_ARM64_SRC_BCM2711_BCM2711_I2C_H

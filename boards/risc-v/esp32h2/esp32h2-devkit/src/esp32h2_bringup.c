@@ -65,6 +65,10 @@
 #  include <nuttx/input/buttons.h>
 #endif
 
+#ifdef CONFIG_ESPRESSIF_EFUSE
+#  include "espressif/esp_efuse.h"
+#endif
+
 #ifdef CONFIG_ESP_RMT
 #  include "esp_board_rmt.h"
 #endif
@@ -88,6 +92,11 @@
 
 #ifdef CONFIG_ESP_MCPWM
 #  include "esp_board_mcpwm.h"
+#endif
+
+#ifdef CONFIG_ESP_PCNT
+#  include "espressif/esp_pcnt.h"
+#  include "esp_board_pcnt.h"
 #endif
 
 #ifdef CONFIG_SYSTEM_NXDIAG_ESPRESSIF_CHIP_WO_TOOL
@@ -146,6 +155,14 @@ int esp_bringup(void)
   if (ret < 0)
     {
       _err("Failed to mount tmpfs at %s: %d\n", CONFIG_LIBC_TMPDIR, ret);
+    }
+#endif
+
+#if defined(CONFIG_ESPRESSIF_EFUSE)
+  ret = esp_efuse_initialize("/dev/efuse");
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to init EFUSE: %d\n", ret);
     }
 #endif
 
@@ -339,6 +356,14 @@ int esp_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: board_motor_initialize failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_ESP_PCNT
+  ret = board_pcnt_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_pcnt_initialize failed: %d\n", ret);
     }
 #endif
 
