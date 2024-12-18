@@ -153,13 +153,13 @@
 #define QSPI_DCR2_PRESCALER_SHIFT    (0)       /* Bits 0-7: Clock prescaler */
 #define QSPI_DCR2_PRESCALER_MASK     (0xff << QSPI_DCR2_PRESCALER_SHIFT)
 
-#define QSPI_DCR2_WRAPSIZE_SHIFT    (16)       /* Bits 16-18: Wrap Size */
-#define QSPI_DCR2_WRAPSIZE_MASK     (0x7 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Bits 0-7: Clock prescaler */
+#define QSPI_DCR2_WRAPSIZE_SHIFT    (16)                              /* Bits 16-18: Wrap Size */
+#define QSPI_DCR2_WRAPSIZE_MASK     (0x7 << QSPI_DCR2_WRAPSIZE_SHIFT)
 #define QSPI_DCR2_WRAPSIZE_DIS      (0x0 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
-#define QSPI_DCR2_WRAPSIZE_16B      (0x2 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
-#define QSPI_DCR2_WRAPSIZE_32B      (0x3 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
-#define QSPI_DCR2_WRAPSIZE_64B      (0x4 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
-#define QSPI_DCR2_WRAPSIZE_128B     (0x5 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrapped reads not supported */
+#define QSPI_DCR2_WRAPSIZE_16B      (0x2 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrap Size 16 bytes */
+#define QSPI_DCR2_WRAPSIZE_32B      (0x3 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrap Size 32 bytes */
+#define QSPI_DCR2_WRAPSIZE_64B      (0x4 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrap Size 64 bytes */
+#define QSPI_DCR2_WRAPSIZE_128B     (0x5 << QSPI_DCR2_WRAPSIZE_SHIFT) /* Wrap Size 128 bytes */
 
 /* Device Configuration Register 3 */
 
