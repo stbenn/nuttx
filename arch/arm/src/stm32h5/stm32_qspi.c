@@ -58,7 +58,7 @@
 #include "stm32_dma.h"
 #endif
 
-#ifdef CONFIG_STM32H5_QUADSPI
+#ifdef CONFIG_STM32H5_QSPI1
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -147,11 +147,11 @@
  * QUADSPI clock defaults to HCLK.
  */
 
-#if defined(CONFIG_STM32H5_QUADSPI) && !defined(STM32_RCC_CCIPR4_OCTOSPI1SEL)
+#if defined(CONFIG_STM32H5_QSPI1) && !defined(STM32_RCC_CCIPR4_OCTOSPI1SEL)
 #  error your board.h needs to define STM32_RCC_CCIPR4_OCTOSPI1SEL
 #endif
 
-#if defined(CONFIG_STM32H5_QUADSPI) && !defined(QSPI_CLK_FREQUENCY)
+#if defined(CONFIG_STM32H5_QSPI1) && !defined(QSPI_CLK_FREQUENCY)
 #  error your board.h needs to define QSPI_CLK_FREQUENCY
 #endif
 

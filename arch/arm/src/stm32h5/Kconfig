@@ -309,8 +309,8 @@ config STM32H5_ETHMAC
 	select ARCH_HAVE_PHY
 	select STM32H5_HAVE_PHY_POLLED
 
-config STM32H5_QUADSPI
-	bool "QuadSPI"
+config STM32H5_QSPI1
+	bool "QSPI1"
 	default n
 
 config STM32H5_USART2
@@ -1575,7 +1575,7 @@ config STM32H5_I2CTIMEOTICKS
 endmenu # "I2C Configuration"
 
 menu "QuadSPI Configuration"
-	depends on STM32H5_QUADSPI
+	depends on STM32H5_QSPI1
 
 config STM32H5_QSPI_FLASH_SIZE
 	int "Size of attached serial flash, bytes"
