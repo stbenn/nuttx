@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/arm64/src/imx9/imx9_lpuart.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -1574,9 +1576,12 @@ static int imx9_interrupt(int irq, void *context, void *arg)
 
 static int imx9_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
-#if defined(CONFIG_SERIAL_TIOCSERGSTRUCT) || defined(CONFIG_SERIAL_TERMIOS)
+#if defined(CONFIG_SERIAL_TIOCSERGSTRUCT)   || \
+    defined(CONFIG_SERIAL_TERMIOS)          || \
+    defined(CONFIG_IMX9_LPUART_SINGLEWIRE ) || \
+    defined(CONFIG_IMX9_LPUART_INVERT )
   struct inode *inode = filep->f_inode;
-  struct uart_dev_s *dev   = inode->i_private;
+  struct uart_dev_s *dev = inode->i_private;
   irqstate_t flags;
 #endif
   int ret   = OK;
@@ -1771,7 +1776,6 @@ static int imx9_ioctl(struct file *filep, int cmd, unsigned long arg)
     case TIOCSSINGLEWIRE:
       {
         uint32_t regval;
-        irqstate_t flags;
         struct imx9_uart_s *priv = (struct imx9_uart_s *)dev;
 
         flags  = spin_lock_irqsave(NULL);
@@ -1799,7 +1803,6 @@ static int imx9_ioctl(struct file *filep, int cmd, unsigned long arg)
         uint32_t ctrl;
         uint32_t stat;
         uint32_t regval;
-        irqstate_t flags;
         struct imx9_uart_s *priv = (struct imx9_uart_s *)dev;
 
         flags  = spin_lock_irqsave(NULL);

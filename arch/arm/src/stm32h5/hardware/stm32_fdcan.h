@@ -1,5 +1,7 @@
 /****************************************************************************
- * arch/arm/src/stm32/hardware/stm32_fdcan.h
+ * arch/arm/src/stm32h5/hardware/stm32_fdcan.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -264,7 +266,7 @@
 
 /* FDCAN interrupt register and interrupt enable register
  * TODO: Change SMG to SMSG?
- */ 
+ */
 
 #define FDCAN_INT_RF0N               (1 << 0)                              /* Bit 0: Rx FIFO 0 new message */
 #define FDCAN_INT_RF0F               (1 << 1)                              /* Bit 1: Rx FIFO 0 full */
@@ -291,7 +293,7 @@
 #define FDCAN_INT_PED                (1 << 22)                             /* Bit 22: Protocol error data phase */
 #define FDCAN_INT_ARA                (1 << 23)                             /* Bit 23: Access to reserved address */
 
-/* FDCAN interrupt line select register 
+/* FDCAN interrupt line select register
  * TODO: Change SMG to SMSG?
  */
 

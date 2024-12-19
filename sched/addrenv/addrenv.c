@@ -129,16 +129,6 @@ int addrenv_switch(FAR struct tcb_s *tcb)
   int cpu;
   int ret;
 
-  /* NULL for the tcb means to use the TCB of the task at the head of the
-   * ready to run list.
-   */
-
-  if (!tcb)
-    {
-      tcb = this_task();
-    }
-
-  DEBUGASSERT(tcb);
   next = tcb->addrenv_curr;
 
   /* Does the group have an address environment? */
@@ -348,6 +338,9 @@ int addrenv_leave(FAR struct tcb_s *tcb)
  *   This is a NuttX internal function so it follows the convention that
  *   0 (OK) is returned on success and a negated errno is returned on
  *   failure.
+ *
+ * Note:
+ *   This API is not safe to use from interrupt.
  *
  ****************************************************************************/
 

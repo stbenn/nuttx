@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/xtensa/src/common/xtensa_irqdispatch.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -57,15 +59,17 @@ uint32_t *xtensa_irq_dispatch(int irq, uint32_t *regs)
 
   /* Nested interrupts are not supported */
 
-  DEBUGASSERT(up_current_regs() == NULL);
+  DEBUGASSERT(!up_interrupt_context());
 
-  /* Current regs non-zero indicates that we are processing an interrupt;
-   * current_regs is also used to manage interrupt level context switches.
+  /* Set irq flag */
+
+  up_set_interrupt_context(true);
+
+  /* This judgment proves that (*running_task)->xcp.regs
+   * is invalid, and we can safely overwrite it.
    */
 
-  up_set_current_regs(regs);
-
-  if (*running_task != NULL)
+  if (!(XTENSA_IRQ_SWINT == irq && regs[REG_A2] == SYS_restore_context))
     {
       (*running_task)->xcp.regs = regs;
     }
@@ -88,7 +92,7 @@ uint32_t *xtensa_irq_dispatch(int irq, uint32_t *regs)
        * thread at the head of the ready-to-run list.
        */
 
-      addrenv_switch(NULL);
+      addrenv_switch(tcb);
 #endif
 
       /* Update scheduler parameters */
@@ -104,11 +108,9 @@ uint32_t *xtensa_irq_dispatch(int irq, uint32_t *regs)
       *running_task = tcb;
     }
 
-  /* Set current_regs to NULL to indicate that we are no longer in an
-   * interrupt handler.
-   */
+  /* Set irq flag */
 
-  up_set_current_regs(NULL);
+  up_set_interrupt_context(false);
 #endif
 
   board_autoled_off(LED_INIRQ);

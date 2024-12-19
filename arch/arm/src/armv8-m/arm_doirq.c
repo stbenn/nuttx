@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/arm/src/armv8-m/arm_doirq.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -68,11 +70,15 @@ void exception_direct(void)
 uint32_t *arm_doirq(int irq, uint32_t *regs)
 {
   struct tcb_s **running_task = &g_running_tasks[this_cpu()];
-  FAR struct tcb_s *tcb;
+  struct tcb_s *tcb           = *running_task;
 
-  if (*running_task != NULL)
+  /* This judgment proves that (*running_task)->xcp.regs
+   * is invalid, and we can safely overwrite it.
+   */
+
+  if (!(NVIC_IRQ_SVCALL == irq && regs[REG_R0] == SYS_restore_context))
     {
-      (*running_task)->xcp.regs = regs;
+      tcb->xcp.regs = regs;
     }
 
   board_autoled_on(LED_INIRQ);
@@ -91,6 +97,12 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 
       irq_dispatch(irq, regs);
 #endif
+      if (tcb->sigdeliver)
+        {
+          /* Pendsv able to access running tcb with no critical section */
+
+          up_schedule_sigaction(tcb);
+        }
 
       up_irq_save();
     }

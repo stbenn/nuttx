@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/arm/src/lpc31xx/lpc31_decodeirq.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -103,7 +105,7 @@ uint32_t *arm_decodeirq(uint32_t *regs)
                * thread at the head of the ready-to-run list.
                */
 
-              addrenv_switch(NULL);
+              addrenv_switch(tcb);
             }
 #endif
 

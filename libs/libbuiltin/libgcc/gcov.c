@@ -315,6 +315,23 @@ void __gcov_exit(void)
 {
 }
 
+void __gcov_execve(void)
+{
+}
+
+void __gcov_execl(void)
+{
+}
+
+void __gcov_execv(void)
+{
+}
+
+pid_t __gcov_fork(void)
+{
+  return fork();
+}
+
 void __gcov_dump(void)
 {
   FAR struct gcov_info *info;

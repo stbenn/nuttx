@@ -1,6 +1,8 @@
 /****************************************************************************
  * arch/risc-v/src/hpm6000/hardware/hpm6300/hpm6300_sysctl.h
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -284,7 +286,7 @@
 #define SYSCTL_RETENTION_LINK_MASK                (0xffU << SYSCTL_RETENTION_LINK_SHIFT)
 #  define SYSCTL_RETENTION_LINK_SOC_RAM           (0 << SYSCTL_RETENTION_LINK_SHIFT)
 #  define SYSCTL_RETENTION_LINK_PERIPH_REG        (1 << SYSCTL_RETENTION_LINK_SHIFT)
-#  define SYSCTL_RETENTION_LINK_CPU0_RAM          (2 << SYSCTL_RETENTION_LINK_SHIFT) 
+#  define SYSCTL_RETENTION_LINK_CPU0_RAM          (2 << SYSCTL_RETENTION_LINK_SHIFT)
 #  define SYSCTL_RETENTION_LINK_CPU0_REG          (3 << SYSCTL_RETENTION_LINK_SHIFT)
 #  define SYSCTL_RETENTION_LINK_XTAL              (4 << SYSCTL_RETENTION_LINK_SHIFT)
 #  define SYSCTL_RETENTION_LINK_PLL0              (5 << SYSCTL_RETENTION_LINK_SHIFT)
