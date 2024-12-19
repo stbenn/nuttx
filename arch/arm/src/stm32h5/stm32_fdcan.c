@@ -111,55 +111,6 @@
 
 #ifdef CONFIG_STM32H5_FDCAN1
 
-/* Bit timing */
-
-#  define FDCAN1_NTSEG1  (CONFIG_STM32H5_FDCAN1_NTSEG1 - 1)
-#  define FDCAN1_NTSEG2  (CONFIG_STM32H5_FDCAN1_NTSEG2 - 1)
-#  define FDCAN1_NBRP    ((STM32_FDCANCLK_FREQUENCY /             \
-                           ((FDCAN1_NTSEG1 + FDCAN1_NTSEG2 + 3) * \
-                            CONFIG_STM32H5_FDCAN1_BITRATE)) - 1)
-#  define FDCAN1_NSJW    (CONFIG_STM32H5_FDCAN1_NSJW - 1)
-
-#  if FDCAN1_NTSEG1 > FDCAN_NBTP_NTSEG1_MAX
-#    error Invalid FDCAN1 NTSEG1
-#  endif
-#  if FDCAN1_NTSEG2 > FDCAN_NBTP_NTSEG2_MAX
-#    error Invalid FDCAN1 NTSEG2
-#  endif
-#  if FDCAN1_NSJW > FDCAN_NBTP_NSJW_MAX
-#    error Invalid FDCAN1 NSJW
-#  endif
-#  if FDCAN1_NBRP > FDCAN_NBTP_NBRP_MAX
-#    error Invalid FDCAN1 NBRP
-#  endif
-
-#  ifdef CONFIG_STM32H5_FDCAN1_FD_BRS
-#    define FDCAN1_DTSEG1 (CONFIG_STM32H5_FDCAN1_DTSEG1 - 1)
-#    define FDCAN1_DTSEG2 (CONFIG_STM32H5_FDCAN1_DTSEG2 - 1)
-#    define FDCAN1_DBRP   ((STM32_FDCANCLK_FREQUENCY /             \
-                            ((FDCAN1_DTSEG1 + FDCAN1_DTSEG2 + 3) * \
-                             CONFIG_STM32H5_FDCAN1_DBITRATE)) - 1)
-#    define FDCAN1_DSJW   (CONFIG_STM32H5_FDCAN1_DSJW - 1)
-#  else
-#    define FDCAN1_DTSEG1 1
-#    define FDCAN1_DTSEG2 1
-#    define FDCAN1_DBRP   1
-#    define FDCAN1_DSJW   1
-#  endif /* CONFIG_STM32H5_FDCAN1_FD_BRS */
-
-#  if FDCAN1_DTSEG1 > FDCAN_DBTP_DTSEG1_MAX
-#    error Invalid FDCAN1 DTSEG1
-#  endif
-#  if FDCAN1_DTSEG2 > FDCAN_DBTP_DTSEG2_MAX
-#    error Invalid FDCAN1 DTSEG2
-#  endif
-#  if FDCAN1_DBRP > FDCAN_DBTP_DBRP_MAX
-#    error Invalid FDCAN1 DBRP
-#  endif
-#  if FDCAN1_DSJW > FDCAN_DBTP_DSJW_MAX
-#    error Invalid FDCAN1 DSJW
-#  endif
-
 /* FDCAN1 Message RAM Configuration *****************************************/
 
 /* FDCAN1 Message RAM Layout */
@@ -335,7 +286,7 @@ enum stm32_frameformat_e
 };
 
 /* CAN mode of operation */
-/* TODO - Make Kconfig option for canmode */
+
 enum stm32_canmode_e
 {
   FDCAN_CLASSIC_MODE = 0,   /* Classic CAN operation */
@@ -429,6 +380,15 @@ struct stm32_fdcan_s
   uint32_t regval;          /* Last value read from the register */
   unsigned int count;       /* Number of times that the value was read */
 #endif
+};
+
+struct fdcan_bitseg
+{
+  uint32_t bitrate;
+  uint8_t sjw;
+  uint8_t bs1;
+  uint8_t bs2;
+  uint8_t prescaler;
 };
 
 /****************************************************************************
@@ -3299,6 +3259,145 @@ static int fdcan_hw_initialize(struct stm32_fdcan_s *priv)
   fdcan_putreg(priv, STM32_FDCAN_CCCR_OFFSET, regval);
 
   return OK;
+}
+
+/****************************************************************************
+ * Name: fdcan_bittiming
+ *
+ * Description:
+ *   Convert desired bitrate to FDCAN bit segment values
+ *   The computed values apply to both data and arbitration phases
+ *
+ * Input Parameters:
+ *   timing - structure to store bit timing
+ *
+ * Returned Value:
+ *   OK on success; >0 on failure.
+ ****************************************************************************/
+
+int32_t fdcan_bittiming(struct fdcan_bitseg *timing)
+{
+  /* Implementation ported from PX4's uavcan_drivers/stm32[h7]
+   *
+   * Ref. "Automatic Baudrate Detection in CANopen Networks", U. Koppe
+   *  MicroControl GmbH & Co. KG
+   *  CAN in Automation, 2003
+   *
+   * According to the source, optimal quanta per bit are:
+   *   Bitrate        Optimal Maximum
+   *   1000 kbps      8       10
+   *   500  kbps      16      17
+   *   250  kbps      16      17
+   *   125  kbps      16      17
+   */
+
+  const uint32_t target_bitrate    = timing->bitrate;
+  static const int32_t max_bs1     = 16;
+  static const int32_t max_bs2     = 8;
+  const uint8_t max_quanta_per_bit = (timing->bitrate >= 1000000) ? 10 : 17;
+  static const int max_sp_location = 900;
+
+  /* Computing (prescaler * BS):
+   *   BITRATE = 1 / (PRESCALER * (1 / PCLK) * (1 + BS1 + BS2))
+   *   BITRATE = PCLK / (PRESCALER * (1 + BS1 + BS2))
+   * let:
+   *   BS = 1 + BS1 + BS2
+   *     (BS == total number of time quanta per bit)
+   *   PRESCALER_BS = PRESCALER * BS
+   * ==>
+   *   PRESCALER_BS = PCLK / BITRATE
+   */
+
+  const uint32_t prescaler_bs = CLK_FREQ / target_bitrate;
+
+  /* Find prescaler value such that the number of quanta per bit is highest */
+
+  uint8_t bs1_bs2_sum = max_quanta_per_bit - 1;
+
+  while ((prescaler_bs % (1 + bs1_bs2_sum)) != 0)
+    {
+      if (bs1_bs2_sum <= 2)
+        {
+          nerr("Target bitrate too high - no solution possible.");
+          return 1; /* No solution */
+        }
+
+      bs1_bs2_sum--;
+    }
+
+  const uint32_t prescaler = prescaler_bs / (1 + bs1_bs2_sum);
+
+  if ((prescaler < 1U) || (prescaler > 1024U))
+    {
+      nerr("Target bitrate invalid - bad prescaler.");
+      return 2; /* No solution */
+    }
+
+  /* Now we have a constraint: (BS1 + BS2) == bs1_bs2_sum.
+   * We need to find the values so that the sample point is as close as
+   * possible to the optimal value.
+   *
+   *   Solve[(1 + bs1)/(1 + bs1 + bs2) == 7/8, bs2]
+   *     (Where 7/8 is 0.875, the recommended sample point location)
+   *   {{bs2 -> (1 + bs1)/7}}
+   *
+   * Hence:
+   *   bs2 = (1 + bs1) / 7
+   *   bs1 = (7 * bs1_bs2_sum - 1) / 8
+   *
+   * Sample point location can be computed as follows:
+   *   Sample point location = (1 + bs1) / (1 + bs1 + bs2)
+   *
+   * Since the optimal solution is so close to the maximum, we prepare two
+   * solutions, and then pick the best one:
+   *   - With rounding to nearest
+   *   - With rounding to zero
+   */
+
+  /* First attempt with rounding to nearest */
+
+  uint8_t bs1 = (uint8_t)((7 * bs1_bs2_sum - 1) + 4) / 8;
+  uint8_t bs2 = (uint8_t)(bs1_bs2_sum - bs1);
+  uint16_t sample_point_permill =
+    (uint16_t)(1000 * (1 + bs1) / (1 + bs1 + bs2));
+
+  if (sample_point_permill > max_sp_location)
+    {
+      /* Second attempt with rounding to zero */
+
+      bs1 = (7 * bs1_bs2_sum - 1) / 8;
+      bs2 = bs1_bs2_sum - bs1;
+    }
+
+  bool valid = (bs1 >= 1) && (bs1 <= max_bs1) && (bs2 >= 1) &&
+    (bs2 <= max_bs2);
+
+  /* Final validation
+   * Helpful Python:
+   * def sample_point_from_btr(x):
+   *     assert 0b0011110010000000111111000000000 & x == 0
+   *     ts2,ts1,brp = (x>>20)&7, (x>>16)&15, x&511
+   *     return (1+ts1+1)/(1+ts1+1+ts2+1)
+   */
+
+  if (target_bitrate != (CLK_FREQ / (prescaler * (1 + bs1 + bs2))) || !valid)
+    {
+      nerr("Target bitrate invalid - solution does not match.");
+      return 3; /* Solution not found */
+    }
+
+#ifdef CONFIG_STM32H7_FDCAN_REGDEBUG
+  ninfo("[fdcan] CLK_FREQ %lu, target_bitrate %lu, prescaler %lu, bs1 %d"
+        ", bs2 %d\n", CLK_FREQ, target_bitrate, prescaler_bs, bs1 - 1,
+        bs2 - 1);
+#endif
+
+  timing->bs1 = (uint8_t)(bs1 - 1);
+  timing->bs2 = (uint8_t)(bs2 - 1);
+  timing->prescaler = (uint16_t)(prescaler - 1);
+  timing->sjw = 0; /* Which means one */
+
+  return 0;
 }
 
 /****************************************************************************

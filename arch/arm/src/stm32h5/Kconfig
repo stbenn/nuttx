@@ -1423,8 +1423,6 @@ config STM32H5_FDCAN1_LOOPBACK
 	---help---
 		Enable the FDCAN1 local loopback mode for testing purposes.
 
-comment "Nominal Bit Timing"
-
 config STM32H5_FDCAN1_BITRATE
 	int "FDCAN bitrate"
 	default 500000
@@ -1432,60 +1430,12 @@ config STM32H5_FDCAN1_BITRATE
 	---help---
 		FDCAN1 bitrate in bits per second.  Required if STM32H5_FDCAN1 is defined.
 
-config STM32H5_FDCAN1_NTSEG1
-	int "FDCAN1 NTSEG1 (PropSeg + PhaseSeg1)"
-	default 6
-	range 1 256
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2) Kyle.
-
-config STM32H5_FDCAN1_NTSEG2
-	int "FDCAN1 NTSEG2 (PhaseSeg2)"
-	default 7
-	range 1 128
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-config STM32H5_FDCAN1_NSJW
-	int "FDCAN1 synchronization jump width"
-	default 1
-	range 1 128
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-comment "Data Bit Timing"
-	depends on CAN_FD && STM32H5_FDCAN1_FD_BRS
-
 config STM32H5_FDCAN1_DBITRATE
 	int "FDCAN1 data bitrate"
 	default 2000000
 	depends on CAN_FD && STM32H5_FDCAN1_FD_BRS
 	---help---
 		FDCAN1 bitrate in bits per second.  Required if operating in FD mode with bit rate switching (BRS).
-
-config STM32H5_FDCAN1_DTSEG1
-	int "FDCAN1 DTSEG1 (PropSeg + PhaseSeg1 of data phase)"
-	default 4
-	range 1 31
-	depends on CAN_FD && STM32H5_FDCAN1_FD_BRS
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-config STM32H5_FDCAN1_DTSEG2
-	int "FDCAN1 DTSEG2 (PhaseSeg2 of data phase)"
-	default 4
-	range 1 15
-	depends on CAN_FD && STM32H5_FDCAN1_FD_BRS
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-config STM32H5_FDCAN1_DSJW
-	int "FDCAN1 fast synchronization jump width"
-	default 2
-	range 1 15
-	depends on CAN_FD && STM32H5_FDCAN1_FD_BRS
-	---help---
-		The duration of a synchronization jump is Tcan_clk x DSJW.
 
 endmenu # FDCAN1 device driver options
 
@@ -1537,8 +1487,6 @@ config STM32H5_FDCAN2_LOOPBACK
 	---help---
 		Enable the FDCAN2 local loopback mode for testing purposes.
 
-comment "Nominal Bit Timing"
-
 config STM32H5_FDCAN2_BITRATE
 	int "FDCAN bitrate"
 	default 500000
@@ -1546,60 +1494,12 @@ config STM32H5_FDCAN2_BITRATE
 	---help---
 		FDCAN2 bitrate in bits per second.  Required if STM32H5_FDCAN2 is defined.
 
-config STM32H5_FDCAN2_NTSEG1
-	int "FDCAN2 NTSEG1 (PropSeg + PhaseSeg1)"
-	default 6
-	range 1 256
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-config STM32H5_FDCAN2_NTSEG2
-	int "FDCAN2 NTSEG2 (PhaseSeg2)"
-	default 7
-	range 1 128
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-config STM32H5_FDCAN2_NSJW
-	int "FDCAN2 synchronization jump width"
-	default 1
-	range 1 128
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-comment "Data Bit Timing"
-	depends on CAN_FD && STM32H5_FDCAN2_FD_BRS
-
 config STM32H5_FDCAN2_DBITRATE
 	int "FDCAN2 data bitrate"
 	default 2000000
 	depends on CAN_FD && STM32H5_FDCAN2_FD_BRS
 	---help---
 		FDCAN2 bitrate in bits per second.  Required if operating in FD mode with bit rate switching (BRS).
-
-config STM32H5_FDCAN2_DTSEG1
-	int "FDCAN2 DTSEG1 (PropSeg + PhaseSeg1 of data phase)"
-	default 4
-	range 1 31
-	depends on CAN_FD && STM32H5_FDCAN2_FD_BRS
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-config STM32H5_FDCAN2_DTSEG2
-	int "FDCAN2 DTSEG2 (PhaseSeg2 of data phase)"
-	default 4
-	range 1 15
-	depends on CAN_FD && STM32H5_FDCAN2_FD_BRS
-	---help---
-		The length of the bit time is Tquanta * (SyncSeg + PropSeg + PhaseSeg1 + PhaseSeg2).
-
-config STM32H5_FDCAN2_DSJW
-	int "FDCAN2 fast synchronization jump width"
-	default 2
-	range 1 15
-	depends on CAN_FD && STM32H5_FDCAN2_FD_BRS
-	---help---
-		The duration of a synchronization jump is Tcan_clk x DSJW.
 
 endmenu # FDCAN2 device driver options
 
