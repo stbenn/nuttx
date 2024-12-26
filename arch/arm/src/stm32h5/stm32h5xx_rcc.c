@@ -1213,7 +1213,6 @@ void stm32_stdclockconfig(void)
       putreg32(regval, STM32_RCC_CCIPR5);
 #endif
 
-
       /* Configure SPI1 source clock */
 
 #if defined(STM32_RCC_CCIPR3_SPI1SEL)
