@@ -3496,8 +3496,8 @@ struct can_dev_s *stm32_fdcaninitialize(int port)
   struct can_dev_s            *dev    = NULL;
   struct stm32_fdcan_s        *priv   = NULL;
   const struct stm32_config_s *config = NULL;
+  bool auto_bit_timing                = true;
   struct fdcan_bitseg timing;
-  bool auto_bit_timing = true;
 
   caninfo("FDCAN%d\n", port);
 

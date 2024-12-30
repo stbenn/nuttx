@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32/nucleo-g431rb/src/stm32_can.c
+ * boards/arm/stm32h5/nucleo-h563zi/src/stm32_can.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *

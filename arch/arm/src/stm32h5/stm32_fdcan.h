@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/stm32/stm32_fdcan.h
+ * arch/arm/src/stm32h5/stm32_fdcan.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
