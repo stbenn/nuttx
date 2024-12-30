@@ -62,6 +62,10 @@ ifeq ($(CONFIG_STM32H5_FDCAN),y)
 CHIP_CSRCS += stm32_fdcan.c
 endif
 
+ifeq ($(CONFIG_STM32H5_QSPI1),y)
+CHIP_CSRCS += stm32_qspi.c
+endif
+
 # Required chip type specific files
 
 ifeq ($(CONFIG_STM32H5_STM32H5XXXX),y)

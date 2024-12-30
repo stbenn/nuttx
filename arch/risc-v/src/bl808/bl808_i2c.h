@@ -1,7 +1,5 @@
 /****************************************************************************
- * arch/arm/src/common/arm_modifyreg16.c
- *
- * SPDX-License-Identifier: Apache-2.0
+ * arch/risc-v/src/bl808/bl808_i2c.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,46 +18,53 @@
  *
  ****************************************************************************/
 
+#ifndef __ARCH_RISC_V_SRC_BL808_BL808_I2C_H
+#define __ARCH_RISC_V_SRC_BL808_BL808_I2C_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/config.h>
-
-#include <stdint.h>
-#include <debug.h>
-
-#include <nuttx/spinlock.h>
-
-#include "arm_internal.h"
+#include <nuttx/i2c/i2c_master.h>
 
 /****************************************************************************
- * Private Data
- ****************************************************************************/
-
-static spinlock_t g_modifyreg_lock = SP_UNLOCKED;
-
-/****************************************************************************
- * Public Functions
+ * Public Functions Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Name: modifyreg16
+ * Name: bl808_i2cbus_initialize
  *
  * Description:
- *   Atomically modify the specified bits in a memory mapped register
+ *   Initialize the selected I2C port. And return a unique instance of struct
+ *   struct i2c_master_s.  This function may be called to obtain multiple
+ *   instances of the interface, each of which may be set up with a
+ *   different frequency and slave address.
+ *
+ * Input Parameter:
+ *   Port number (for hardware that has multiple I2C interfaces)
+ *
+ * Returned Value:
+ *   Valid I2C device structure reference on success; a NULL on failure
  *
  ****************************************************************************/
 
-void modifyreg16(unsigned int addr, uint16_t clearbits, uint16_t setbits)
-{
-  irqstate_t flags;
-  uint16_t   regval;
+struct i2c_master_s *bl808_i2cbus_initialize(int port);
 
-  flags   = spin_lock_irqsave(&g_modifyreg_lock);
-  regval  = getreg16(addr);
-  regval &= ~clearbits;
-  regval |= setbits;
-  putreg16(regval, addr);
-  spin_unlock_irqrestore(&g_modifyreg_lock, flags);
-}
+/****************************************************************************
+ * Name: bl808_i2cbus_uninitialize
+ *
+ * Description:
+ *   De-initialize the selected I2C port, and power down the device.
+ *
+ * Input Parameter:
+ *   Device structure as returned by the rp2040_i2cbus_initialize()
+ *
+ * Returned Value:
+ *   OK on success, ERROR when internal reference count mismatch or dev
+ *   points to invalid hardware device.
+ *
+ ****************************************************************************/
+
+int bl808_i2cbus_uninitialize(struct i2c_master_s *dev);
+
+#endif /* __ARCH_RISC_V_SRC_BL808_BL808_I2C_H */
