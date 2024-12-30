@@ -110,6 +110,58 @@
 
 #ifdef CONFIG_STM32H5_FDCAN1
 
+/* Bit timing */
+
+#  ifndef CONFIG_STM32H5_FDCAN1_AUTO_BIT_TIMING
+
+#    define FDCAN1_NTSEG1  (CONFIG_STM32H5_FDCAN1_NTSEG1 - 1)
+#    define FDCAN1_NTSEG2  (CONFIG_STM32H5_FDCAN1_NTSEG2 - 1)
+#    define FDCAN1_NBRP    ((STM32_FDCANCLK_FREQUENCY /             \
+                             ((FDCAN1_NTSEG1 + FDCAN1_NTSEG2 + 3) * \
+                              CONFIG_STM32H5_FDCAN1_BITRATE)) - 1)
+#    define FDCAN1_NSJW    (CONFIG_STM32H5_FDCAN1_NSJW - 1)
+
+#    if FDCAN1_NTSEG1 > FDCAN_NBTP_NTSEG1_MAX
+#      error Invalid FDCAN1 NTSEG1
+#    endif
+#    if FDCAN1_NTSEG2 > FDCAN_NBTP_NTSEG2_MAX
+#      error Invalid FDCAN1 NTSEG2
+#    endif
+#    if FDCAN1_NSJW > FDCAN_NBTP_NSJW_MAX
+#      error Invalid FDCAN1 NSJW
+#    endif
+#    if FDCAN1_NBRP > FDCAN_NBTP_NBRP_MAX
+#      error Invalid FDCAN1 NBRP
+#    endif
+
+#    ifdef CONFIG_STM32H5_FDCAN1_FD_BRS
+#      define FDCAN1_DTSEG1 (CONFIG_STM32H5_FDCAN1_DTSEG1 - 1)
+#      define FDCAN1_DTSEG2 (CONFIG_STM32H5_FDCAN1_DTSEG2 - 1)
+#      define FDCAN1_DBRP   ((STM32_FDCANCLK_FREQUENCY /             \
+                              ((FDCAN1_DTSEG1 + FDCAN1_DTSEG2 + 3) * \
+                               CONFIG_STM32H5_FDCAN1_DBITRATE)) - 1)
+#      define FDCAN1_DSJW   (CONFIG_STM32H5_FDCAN1_DSJW - 1)
+#    else
+#      define FDCAN1_DTSEG1 1
+#      define FDCAN1_DTSEG2 1
+#      define FDCAN1_DBRP   1
+#      define FDCAN1_DSJW   1
+#    endif /* CONFIG_STM32_FDCAN1_FD_BRS */
+
+#    if FDCAN1_DTSEG1 > FDCAN_DBTP_DTSEG1_MAX
+#      error Invalid FDCAN1 DTSEG1
+#    endif
+#    if FDCAN1_DTSEG2 > FDCAN_DBTP_DTSEG2_MAX
+#      error Invalid FDCAN1 DTSEG2
+#    endif
+#    if FDCAN1_DBRP > FDCAN_DBTP_DBRP_MAX
+#      error Invalid FDCAN1 DBRP
+#    endif
+#    if FDCAN1_DSJW > FDCAN_DBTP_DSJW_MAX
+#      error Invalid FDCAN1 DSJW
+#    endif
+#  endif
+
 /* FDCAN1 Message RAM Configuration *****************************************/
 
 /* FDCAN1 Message RAM Layout */
@@ -127,6 +179,59 @@
 /* FDCAN2 Configuration *****************************************************/
 
 #ifdef CONFIG_STM32H5_FDCAN2
+
+/* Bit timing */
+
+#  ifndef CONFIG_STM32H5_FDCAN2_AUTO_BIT_TIMING
+
+#    define FDCAN2_NTSEG1  (CONFIG_STM32H5_FDCAN2_NTSEG1 - 1)
+#    define FDCAN2_NTSEG2  (CONFIG_STM32H5_FDCAN2_NTSEG2 - 1)
+#    define FDCAN2_NBRP    (((STM32_FDCANCLK_FREQUENCY /              \
+                            ((FDCAN2_NTSEG1 + FDCAN2_NTSEG2 + 3) *  \
+                             CONFIG_STM32H5_FDCAN2_BITRATE)) - 1))
+#    define FDCAN2_NSJW    (CONFIG_STM32H5_FDCAN2_NSJW - 1)
+
+#    if FDCAN2_NTSEG1 > FDCAN_NBTP_NTSEG1_MAX
+#      error Invalid FDCAN2 NTSEG1
+#    endif
+#    if FDCAN2_NTSEG2 > FDCAN_NBTP_NTSEG2_MAX
+#      error Invalid FDCAN2 NTSEG2
+#    endif
+#    if FDCAN2_NSJW > FDCAN_NBTP_NSJW_MAX
+#      error Invalid FDCAN2 NSJW
+#    endif
+#    if FDCAN2_NBRP > FDCAN_NBTP_NBRP_MAX
+#      error Invalid FDCAN1 NBRP
+#    endif
+
+#    ifdef CONFIG_STM32H5_FDCAN2_FD_BRS
+#      define FDCAN2_DTSEG1 (CONFIG_STM32H5_FDCAN2_DTSEG1 - 1)
+#      define FDCAN2_DTSEG2 (CONFIG_STM32H5_FDCAN2_DTSEG2 - 1)
+#      define FDCAN2_DBRP   (((STM32_FDCANCLK_FREQUENCY /                 \
+                             ((FDCAN2_DTSEG1 + FDCAN2_DTSEG2 + 3) *     \
+                              CONFIG_STM32H5_FDCAN2_DBITRATE)) - 1))
+#      define FDCAN2_DSJW   (CONFIG_STM32H5_FDCAN2_DSJW - 1)
+#    else
+#      define FDCAN2_DTSEG1 1
+#      define FDCAN2_DTSEG2 1
+#      define FDCAN2_DBRP   1
+#      define FDCAN2_DSJW   1
+#    endif /* CONFIG_STM32_FDCAN2_FD_BRS */
+
+#    if FDCAN2_DTSEG1 > FDCAN_DBTP_DTSEG1_MAX
+#      error Invalid FDCAN2 DTSEG1
+#    endif
+#    if FDCAN2_DTSEG2 > FDCAN_DBTP_DTSEG2_MAX
+#      error Invalid FDCAN2 DTSEG2
+#    endif
+#    if FDCAN2_DBRP > FDCAN_DBTP_DBRP_MAX
+#      error Invalid FDCAN2 DBRP
+#    endif
+#    if FDCAN2_DSJW > FDCAN_DBTP_DSJW_MAX
+#      error Invalid FDCAN2 DSJW
+#    endif
+
+#  endif
 
 /* FDCAN2 Message RAM Configuration *****************************************/
 
@@ -446,6 +551,16 @@ static const struct stm32_config_s g_fdcan1const =
 #if defined(CONFIG_STM32H5_FDCAN1_FD_BRS)
   .data_baud        = CONFIG_STM32H5_FDCAN1_DBITRATE,
 #endif
+#ifndef CONFIG_STM32H5_FDCAN1_AUTO_BIT_TIMING
+  .nbtp             = FDCAN_NBTP_NBRP(FDCAN1_NBRP) |
+                      FDCAN_NBTP_NTSEG1(FDCAN1_NTSEG1) |
+                      FDCAN_NBTP_NTSEG2(FDCAN1_NTSEG2) |
+                      FDCAN_NBTP_NSJW(FDCAN1_NSJW),
+  .dbtp             = FDCAN_DBTP_DBRP(FDCAN1_DBRP) |
+                      FDCAN_DBTP_DTSEG1(FDCAN1_DTSEG1) |
+                      FDCAN_DBTP_DTSEG2(FDCAN1_DTSEG2) |
+                      FDCAN_DBTP_DSJW(FDCAN1_DSJW),
+#endif
   .port             = 1,
   .irq0             = STM32_IRQ_FDCAN1_IT0,
   .irq1             = STM32_IRQ_FDCAN1_IT1,
@@ -509,6 +624,16 @@ static const struct stm32_config_s g_fdcan2const =
   .baud             = CONFIG_STM32H5_FDCAN2_BITRATE,
 #if defined(CONFIG_STM32H5_FDCAN1_FD_BRS)
   .data_baud        = CONFIG_STM32H5_FDCAN2_DBITRATE,
+#endif
+#ifndef CONFIG_STM32H5_FDCAN2_AUTO_BIT_TIMING
+  .nbtp             = FDCAN_NBTP_NBRP(FDCAN2_NBRP) |
+                      FDCAN_NBTP_NTSEG1(FDCAN2_NTSEG1) |
+                      FDCAN_NBTP_NTSEG2(FDCAN2_NTSEG2) |
+                      FDCAN_NBTP_NSJW(FDCAN2_NSJW),
+  .dbtp             = FDCAN_DBTP_DBRP(FDCAN2_DBRP) |
+                      FDCAN_DBTP_DTSEG1(FDCAN2_DTSEG1) |
+                      FDCAN_DBTP_DTSEG2(FDCAN2_DTSEG2) |
+                      FDCAN_DBTP_DSJW(FDCAN2_DSJW),
 #endif
   .port             = 2,
   .irq0             = STM32_IRQ_FDCAN2_IT0,
@@ -3372,6 +3497,7 @@ struct can_dev_s *stm32_fdcaninitialize(int port)
   struct stm32_fdcan_s        *priv   = NULL;
   const struct stm32_config_s *config = NULL;
   struct fdcan_bitseg timing;
+  bool auto_bit_timing = true;
 
   caninfo("FDCAN%d\n", port);
 
@@ -3385,6 +3511,9 @@ struct can_dev_s *stm32_fdcaninitialize(int port)
       dev    = &g_fdcan1dev;
       priv   = &g_fdcan1priv;
       config = &g_fdcan1const;
+#ifndef CONFIG_STM32H5_FDCAN1_AUTO_BIT_TIMING
+      auto_bit_timing = false;
+#endif
     }
   else
 #endif
@@ -3396,6 +3525,9 @@ struct can_dev_s *stm32_fdcaninitialize(int port)
       dev    = &g_fdcan2dev;
       priv   = &g_fdcan2priv;
       config = &g_fdcan2const;
+#ifndef CONFIG_STM32H5_FDCAN2_AUTO_BIT_TIMING
+      auto_bit_timing = false;
+#endif
     }
   else
 #endif
@@ -3413,35 +3545,43 @@ struct can_dev_s *stm32_fdcaninitialize(int port)
    * due to IOCTL command processing.
    */
 
-  timing.bitrate = config->baud;
-  if (fdcan_bittiming(&timing) != OK)
+  if (auto_bit_timing == false)
     {
-      printf("ERROR: Invalid CAN nominal phase timings\n");
-      return NULL;
-    }
-
-  priv->nbtp       = FDCAN_NBTP_NBRP(timing.prescaler) |
-                     FDCAN_NBTP_NTSEG1(timing.bs1) |
-                     FDCAN_NBTP_NTSEG2(timing.bs2) |
-                     FDCAN_NBTP_NSJW(timing.sjw);
-
-  if (config->mode == FDCAN_FD_BRS_MODE)
-    {
-      timing.bitrate = config->data_baud;
-      if (fdcan_bittiming(&timing) != OK)
-        {
-          printf("ERROR: Invalid CAN data phase timings\n");
-          return NULL;
-        }
-
-      priv->dbtp       = FDCAN_DBTP_DBRP(timing.prescaler) |
-                         FDCAN_DBTP_DTSEG1(timing.bs1) |
-                         FDCAN_DBTP_DTSEG2(timing.bs2) |
-                         FDCAN_DBTP_DSJW(timing.sjw);
+      priv->nbtp   = config->nbtp;
+      priv->dbtp   = config->dbtp;
     }
   else
     {
-      priv->dbtp       = 0;
+      timing.bitrate = config->baud;
+      if (fdcan_bittiming(&timing) != OK)
+        {
+          printf("ERROR: Invalid CAN nominal phase timings\n");
+          return NULL;
+        }
+
+      priv->nbtp       = FDCAN_NBTP_NBRP(timing.prescaler) |
+                         FDCAN_NBTP_NTSEG1(timing.bs1) |
+                         FDCAN_NBTP_NTSEG2(timing.bs2) |
+                         FDCAN_NBTP_NSJW(timing.sjw);
+
+      if (config->mode == FDCAN_FD_BRS_MODE)
+        {
+          timing.bitrate = config->data_baud;
+          if (fdcan_bittiming(&timing) != OK)
+            {
+              printf("ERROR: Invalid CAN data phase timings\n");
+              return NULL;
+            }
+
+          priv->dbtp       = FDCAN_DBTP_DBRP(timing.prescaler) |
+                             FDCAN_DBTP_DTSEG1(timing.bs1) |
+                             FDCAN_DBTP_DTSEG2(timing.bs2) |
+                             FDCAN_DBTP_DSJW(timing.sjw);
+        }
+      else
+        {
+          priv->dbtp       = 0;
+        }
     }
 
   dev->cd_ops  = &g_fdcanops;
