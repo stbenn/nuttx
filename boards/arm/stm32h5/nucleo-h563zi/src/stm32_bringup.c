@@ -110,6 +110,16 @@ int stm32_bringup(void)
     }
 #endif /* CONFIG_ADC*/
 
+#ifdef CONFIG_STM32H5_FDCAN_CHARDRIVER
+  /* Initialize CAN and register the CAN driver. */
+
+  ret = stm32_can_setup();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_fdcan_setup failed: %d\n", ret);
+    }
+#endif
+
   UNUSED(ret);
   return OK;
 }
