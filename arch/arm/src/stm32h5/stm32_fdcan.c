@@ -73,7 +73,7 @@
 
 #  define FDCAN_MSGRAM_WORDS         (212)
 #  define STM32_CANRAM1_BASE         (STM32_FDCAN_SRAM_BASE + 0x0000)
-#  define STM32_CANRAM2_BASE         (STM32_FDCAN_SRAM_BASE + 1*(FDCAN_MSGRAM_WORDS * 4) + 4)
+#  define STM32_CANRAM2_BASE         (STM32_FDCAN_SRAM_BASE + 1*(FDCAN_MSGRAM_WORDS * 4))
 
 #  ifdef CONFIG_STM32H5_FDCAN1
 #    define FDCAN1_STDFILTER_SIZE    (28)
@@ -622,7 +622,7 @@ static const struct stm32_config_s g_fdcan2const =
   .txpinset         = GPIO_FDCAN2_TX,
   .base             = STM32_FDCAN2_BASE,
   .baud             = CONFIG_STM32H5_FDCAN2_BITRATE,
-#if defined(CONFIG_STM32H5_FDCAN1_FD_BRS)
+#if defined(CONFIG_STM32H5_FDCAN2_FD_BRS)
   .data_baud        = CONFIG_STM32H5_FDCAN2_DBITRATE,
 #endif
 #ifndef CONFIG_STM32H5_FDCAN2_AUTO_BIT_TIMING
@@ -2313,13 +2313,12 @@ static int fdcan_send(struct can_dev_s *dev, struct can_msg_s *msg)
         }
     }
   else
-#else
+#endif
     {
       txbuffer[0] &= ~BUFFER_R0_ESI;
       txbuffer[1] &= ~BUFFER_R1_FDF;
       txbuffer[1] &= ~BUFFER_R1_BRS;
     }
-#endif
 
   /* Followed by the amount of data corresponding to the DLC (T2..) */
 
@@ -3326,7 +3325,6 @@ static int fdcan_hw_initialize(struct stm32_fdcan_s *priv)
 
   regval  = fdcan_getreg(priv, STM32_FDCAN_CCCR_OFFSET);
   regval &= ~FDCAN_CCCR_INIT;
-  fdcan_putreg(priv, STM32_FDCAN_CCCR_OFFSET, regval);
   fdcan_putreg(priv, STM32_FDCAN_CCCR_OFFSET, regval);
 
   return OK;
