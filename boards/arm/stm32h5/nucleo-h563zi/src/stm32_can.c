@@ -62,14 +62,14 @@
  *
  ****************************************************************************/
 
-int stm32_can_setup(void)
+int stm32_can_setup(uint8_t port)
 {
   struct can_dev_s *can;
   int ret;
 
   /* Call stm32_fdcaninitialize() to get an instance of the CAN interface */
 
-  can = stm32_fdcaninitialize(1);
+  can = stm32_fdcaninitialize(port);
   if (can == NULL)
     {
       canerr("ERROR:  Failed to get CAN interface\n");
@@ -77,15 +77,20 @@ int stm32_can_setup(void)
     }
 
   /* Register the CAN driver at "/dev/can0" */
-
-  ret = can_register("/dev/can0", can);
-  if (ret < 0)
+  if (port == 1)
     {
-      canerr("ERROR: can_register failed: %d\n", ret);
-      return ret;
+      ret = can_register("/dev/can1", can);
+    }
+  else if (port == 2)
+    {
+      ret = can_register("/dev/can2", can);
+    }
+  else
+    {
+      ret = -ENODEV;
     }
 
-  return OK;
+  return ret;
 }
 
 #endif /* CONFIG_CAN */

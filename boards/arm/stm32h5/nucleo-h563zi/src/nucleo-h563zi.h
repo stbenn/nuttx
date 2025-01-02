@@ -138,7 +138,7 @@ int stm32_adc_setup(void);
  ****************************************************************************/
 
 #ifdef CONFIG_STM32H5_FDCAN_CHARDRIVER
-int stm32_can_setup(void);
+int stm32_can_setup(uint8_t port);
 #endif
 
 #endif /* __ASSEMBLY__ */

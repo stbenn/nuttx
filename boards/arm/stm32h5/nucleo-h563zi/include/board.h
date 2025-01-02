@@ -256,6 +256,31 @@
 #define GPIO_USART3_RX   GPIO_USART3_RX_4    /* PD9 */
 #define GPIO_USART3_TX   GPIO_USART3_TX_4    /* PD8 */
 
+/* FDCAN Clock Source and GPIOs ***********************************************/
+
+#define STM32_FDCAN_FREQUENCY      STM32_PLL1Q_FREQUENCY
+#define STM32_RCC_CCIPR5_FDCANSEL  RCC_CCIPR5_FDCANSEL_PLL1QCK
+
+#define GPIO_FDCAN1_RX   GPIO_FDCAN1_RX_3    /* PD0 */
+#define GPIO_FDCAN1_TX   GPIO_FDCAN1_TX_4    /* PD1 */
+
+#define GPIO_FDCAN2_RX   GPIO_FDCAN2_RX_2    /* PB12 */
+#define GPIO_FDCAN2_TX   GPIO_FDCAN2_TX_3    /* PA10 */
+
+/* QSPI Clock Source and GPIOs ************************************************/
+
+/*
+#define STM32_QSPI_FREQUENCY STM32_PLL1Q_FREQUENCY
+#define STM32_RCC_CCIPR4_OCTOSPI1SEL RCC_CCIPR4_OCTOSPI1SEL_PLL1QCK
+
+#define GPIO_QSPI_CS  GPIO_OCTOSPI1_NCS_5
+#define GPIO_QSPI_SCK GPIO_OCTOSPI1_CLK_3
+#define GPIO_QSPI_IO0 GPIO_OCTOSPI1_IO0_4
+#define GPIO_QSPI_IO1 GPIO_OCTOSPI1_IO1_3
+#define GPIO_QSPI_IO2 GPIO_OCTOSPI1_IO2_4
+#define GPIO_QSPI_IO3 GPIO_OCTOSPI1_IO3_3
+*/
+
 /* LED definitions **********************************************************/
 
 /* The Nucleo board has numerous LEDs but only three, LD1 a Green LED,
