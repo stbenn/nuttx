@@ -66,10 +66,6 @@ ifeq ($(CONFIG_STM32H5_TIM),y)
 CHIP_CSRCS += stm32_tim.c
 endif
 
-ifeq ($(CONFIG_STM32H5_LPTIM),y)
-CHIP_CSRCS += stm32_lptim.c
-endif
-
 # Required chip type specific files
 
 ifeq ($(CONFIG_STM32H5_STM32H5XXXX),y)
