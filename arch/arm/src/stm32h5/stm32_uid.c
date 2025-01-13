@@ -54,10 +54,12 @@
 void stm32_get_uniqueid(uint8_t uniqueid[12])
 {
   int i;
+  uint32_t *uid = (uint32_t *) uniqueid;
 
-  for (i = 0; i < 12; i++)
+  for (i = 0; i < 3; i++)
     {
-      uniqueid[i] = *((uint8_t *)(STM32_SYSMEM_UID) + i);
+      *uid = *((uint32_t *)(STM32_SYSMEM_UID) + i);
+      uid++;
     }
 }
 
