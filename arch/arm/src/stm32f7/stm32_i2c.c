@@ -290,6 +290,10 @@
 #  endif
 #endif
 
+#if STM32_HSI_FREQUENCY != 16000000 || defined(INVALID_CLOCK_SOURCE)
+#  error STM32_I2C: Peripheral clock is HSI and it must be 16mHz or the speed/timing calculations need to be redone.
+#endif
+
 /* CONFIG_I2C_POLLED may be set so that I2C interrupts will not be used.
  * Instead, CPU-intensive polling will be used.
  */
@@ -2018,9 +2022,9 @@ static int stm32_i2c_isr_process(struct stm32_i2c_priv_s *priv)
               i2cinfo("TCR: DISABLE RELOAD: NBYTES = dcnt = %i msgc = %i\n",
                       priv->dcnt, priv->msgc);
 
-              stm32_i2c_disable_reload(priv);
-
               stm32_i2c_set_bytes_to_transfer(priv, priv->dcnt);
+
+              stm32_i2c_disable_reload(priv);
             }
 
           i2cinfo("TCR: EXIT dcnt = %i msgc = %i status 0x%08" PRIx32 "\n",
@@ -2730,11 +2734,6 @@ static int stm32_i2c_pm_prepare(struct pm_callback_s *cb, int domain,
 struct i2c_master_s *stm32_i2cbus_initialize(int port)
 {
   struct stm32_i2c_priv_s *priv = NULL;  /* private data of device with multiple instances */
-
-#if STM32_HSI_FREQUENCY != 16000000 || defined(INVALID_CLOCK_SOURCE)
-# warning STM32_I2C_INIT: Peripheral clock is HSI and it must be 16mHz or the speed/timing calculations need to be redone.
-  return NULL;
-#endif
 
   /* Get I2C private structure */
 

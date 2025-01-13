@@ -26,14 +26,12 @@
 
 #include <nuttx/config.h>
 
-#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <syslog.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <syslog.h>
 #include <debug.h>
 #include <stdio.h>
 
@@ -128,6 +126,11 @@
 
 #ifdef CONFIG_ESPRESSIF_TEMP
 #  include "espressif/esp_temperature_sensor.h"
+#endif
+
+#ifdef CONFIG_ESP_PCNT
+#  include "espressif/esp_pcnt.h"
+#  include "esp32s3_board_pcnt.h"
 #endif
 
 #ifdef CONFIG_SYSTEM_NXDIAG_ESPRESSIF_CHIP_WO_TOOL
@@ -538,6 +541,14 @@ int esp32s3_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: board_motor_initialize failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_ESP_PCNT
+  ret = board_pcnt_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_pcnt_initialize failed: %d\n", ret);
     }
 #endif
 

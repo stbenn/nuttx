@@ -41,7 +41,7 @@ CHIP_CSRCS += stm32_idle.c
 endif
 
 ifeq ($(CONFIG_TIMER),y)
-CHIP_CSRCS += stm32h5_tim_lowerhalf.c
+CHIP_CSRCS += stm32_tim_lowerhalf.c
 endif
 
 ifeq ($(CONFIG_STM32H5_I2C),y)
@@ -50,6 +50,22 @@ endif
 
 ifeq ($(CONFIG_ADC),y)
 CHIP_CSRCS += stm32_adc.c
+endif
+
+ifeq ($(STM32H5_FDCAN_CHARDRIVER),y)
+CHIP_CSRCS += stm32_fdcan.c
+endif
+
+ifeq ($(CONFIG_STM32H5_SPI),y)
+CHIP_CSRCS += stm32_spi.c
+endif
+
+ifeq ($(CONFIG_STM32H5_QSPI1),y)
+CHIP_CSRCS += stm32_qspi.c
+endif
+
+ifeq ($(CONFIG_STM32H5_TIM),y)
+CHIP_CSRCS += stm32_tim.c
 endif
 
 # Required chip type specific files

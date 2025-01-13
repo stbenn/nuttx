@@ -57,7 +57,6 @@
 #endif
 #include "stm32wl5_rcc.h"
 #include "arm_internal.h"
-#include "arm_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -261,6 +260,7 @@ struct stm32wl5_serial_s
   const uint32_t    rs485_dir_gpio;     /* U[S]ART RS-485 DIR GPIO pin configuration */
   const bool        rs485_dir_polarity; /* U[S]ART RS-485 DIR pin state for TX enabled */
 #endif
+  spinlock_t        lock;
 };
 
 /****************************************************************************
@@ -448,6 +448,7 @@ static struct stm32wl5_serial_s g_lpuart1priv =
   .rs485_dir_polarity = true,
 #    endif
 #  endif
+  .lock               = SP_UNLOCKED,
 };
 #endif
 
@@ -507,6 +508,7 @@ static struct stm32wl5_serial_s g_usart1priv =
   .rs485_dir_polarity = true,
 #  endif
 #endif
+  .lock               = SP_UNLOCKED,
 };
 #endif
 
@@ -568,6 +570,7 @@ static struct stm32wl5_serial_s g_usart2priv =
   .rs485_dir_polarity = true,
 #    endif
 #  endif
+  .lock               = SP_UNLOCKED,
 };
 #endif
 
@@ -664,11 +667,11 @@ static void stm32wl5serial_restoreusartint(struct stm32wl5_serial_s *priv,
 {
   irqstate_t flags;
 
-  flags = spin_lock_irqsave(NULL);
+  flags = spin_lock_irqsave(&priv->lock);
 
   stm32wl5serial_setusartint(priv, ie);
 
-  spin_unlock_irqrestore(NULL, flags);
+  spin_unlock_irqrestore(&priv->lock, flags);
 }
 
 /****************************************************************************
@@ -680,7 +683,7 @@ static void stm32wl5serial_disableusartint(struct stm32wl5_serial_s *priv,
 {
   irqstate_t flags;
 
-  flags = spin_lock_irqsave(NULL);
+  flags = spin_lock_irqsave(&priv->lock);
 
   if (ie)
     {
@@ -723,7 +726,7 @@ static void stm32wl5serial_disableusartint(struct stm32wl5_serial_s *priv,
 
   stm32wl5serial_setusartint(priv, 0);
 
-  spin_unlock_irqrestore(NULL, flags);
+  spin_unlock_irqrestore(&priv->lock, flags);
 }
 
 /****************************************************************************

@@ -29,14 +29,10 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <syslog.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <syslog.h>
 #include <debug.h>
-#include <stdio.h>
-
 #include <errno.h>
 #if defined(CONFIG_ESP32_EFUSE)
 #include <nuttx/efuse/efuse.h>
@@ -94,8 +90,9 @@
 #  include "esp32_i2s.h"
 #endif
 
-#ifdef CONFIG_ESP32_PCNT_AS_QE
-#  include "board_qencoder.h"
+#ifdef CONFIG_ESP_PCNT
+#  include "espressif/esp_pcnt.h"
+#  include "esp32_board_pcnt.h"
 #endif
 
 #ifdef CONFIG_I2CMULTIPLEXER_TCA9548A
@@ -139,7 +136,6 @@
 #endif
 
 #ifdef CONFIG_LCD_DEV
-#  include <nuttx/board.h>
 #  include <nuttx/lcd/lcd_dev.h>
 #endif
 
@@ -156,7 +152,6 @@
 #endif
 
 #ifdef CONFIG_SPI_SLAVE_DRIVER
-#  include "esp32_spi.h"
 #  include "esp32_board_spislavedev.h"
 #endif
 
@@ -475,16 +470,11 @@ int esp32_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_SENSORS_QENCODER
-  /* Initialize and register the qencoder driver */
-
-  ret = board_qencoder_initialize(0, PCNT_QE0_ID);
-  if (ret != OK)
+#ifdef CONFIG_ESP_PCNT
+  ret = board_pcnt_initialize();
+  if (ret < 0)
     {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the qencoder: %d\n",
-             ret);
-      return ret;
+      syslog(LOG_ERR, "ERROR: board_pcnt_initialize failed: %d\n", ret);
     }
 #endif
 

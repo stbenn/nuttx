@@ -87,7 +87,7 @@ find_program(KCONFIGLIB olddefconfig)
 if(NOT KCONFIGLIB)
   message(
     FATAL_ERROR "Kconfig environment depends on kconfiglib, Please install:
-  $ sudo apt install python3-kconfiglib")
+  $ sudo pip3 install kconfiglib")
 endif()
 
 # BOARD CONFIG can be set to directory path, or <board-name>[/:]<config-name>
@@ -727,6 +727,7 @@ else()
       OUTPUT nuttx.rel
       COMMAND
         ${CMAKE_C_COMPILER} ARGS -r $<$<BOOL:${CONFIG_SIM_M32}>:-m32>
+        $<$<BOOL:${CONFIG_HOST_LINUX}>:-Wl,-z,noexecstack>
         $<TARGET_OBJECTS:sim_head> $<$<NOT:$<BOOL:${APPLE}>>:-Wl,--start-group>
         ${nuttx_libs_paths} $<$<NOT:$<BOOL:${APPLE}>>:-Wl,--end-group> -o
         nuttx.rel
@@ -751,7 +752,7 @@ endif()
 # Generate system map using the compiler toolchain. Conventionally, the tool
 # which dump symbols are called nm, though, some compiler toolchain may have a
 # different name.
-if(NOT WIN32)
+if(NOT CMAKE_HOST_WIN32)
   add_custom_command(
     OUTPUT System.map
     COMMAND

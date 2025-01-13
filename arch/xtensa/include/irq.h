@@ -94,8 +94,9 @@
 #define REG_SAR             (18)
 #define REG_EXCCAUSE        (19)
 #define REG_EXCVADDR        (20)
+#define REG_THREADPTR       (21)
 
-#define _REG_EXTRA_START    (21)
+#define _REG_EXTRA_START    (22)
 
 #if XCHAL_HAVE_S32C1I != 0
 #  define REG_SCOMPARE1       (_REG_EXTRA_START + 0)
@@ -219,7 +220,7 @@ struct xcptcontext
 
 /* Return the current value of the PS register */
 
-static inline uint32_t xtensa_getps(void)
+static inline_function uint32_t xtensa_getps(void)
 {
   uint32_t ps;
 
@@ -233,7 +234,8 @@ static inline uint32_t xtensa_getps(void)
 
 /* Set the value of the PS register */
 
-noinstrument_function static inline void xtensa_setps(uint32_t ps)
+noinstrument_function static inline_function
+void xtensa_setps(uint32_t ps)
 {
   __asm__ __volatile__
   (
@@ -262,7 +264,8 @@ static inline_function uint32_t up_getsp(void)
 
 /* Restore the value of the PS register */
 
-noinstrument_function static inline void up_irq_restore(uint32_t ps)
+noinstrument_function static inline_function
+void up_irq_restore(uint32_t ps)
 {
   __asm__ __volatile__
   (
@@ -276,7 +279,7 @@ noinstrument_function static inline void up_irq_restore(uint32_t ps)
 
 /* Disable interrupts and return the previous value of the PS register */
 
-noinstrument_function static inline uint32_t up_irq_save(void)
+noinstrument_function static inline_function uint32_t up_irq_save(void)
 {
   uint32_t ps;
 
@@ -299,7 +302,7 @@ noinstrument_function static inline uint32_t up_irq_save(void)
 
 /* Enable interrupts at all levels */
 
-static inline void up_irq_enable(void)
+static inline_function void up_irq_enable(void)
 {
 #ifdef __XTENSA_CALL0_ABI__
   xtensa_setps(PS_INTLEVEL(0) | PS_UM);
@@ -310,7 +313,7 @@ static inline void up_irq_enable(void)
 
 /* Disable low- and medium- priority interrupts */
 
-noinstrument_function static inline void up_irq_disable(void)
+noinstrument_function static inline_function void up_irq_disable(void)
 {
 #ifdef __XTENSA_CALL0_ABI__
   xtensa_setps(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM);
@@ -323,7 +326,7 @@ noinstrument_function static inline void up_irq_disable(void)
  * Name: xtensa_disable_all
  ****************************************************************************/
 
-static inline void xtensa_disable_all(void)
+static inline_function void xtensa_disable_all(void)
 {
   __asm__ __volatile__
   (
@@ -338,7 +341,7 @@ static inline void xtensa_disable_all(void)
  * Name: xtensa_intclear
  ****************************************************************************/
 
-static inline void xtensa_intclear(uint32_t mask)
+static inline_function void xtensa_intclear(uint32_t mask)
 {
   __asm__ __volatile__
   (
@@ -464,6 +467,13 @@ noinstrument_function static inline_function bool up_interrupt_context(void)
 
 #define up_getusrpc(regs) \
     (((uint32_t *)((regs) ? (regs) : running_regs()))[REG_PC])
+
+/****************************************************************************
+ * Name: up_getusrsp
+ ****************************************************************************/
+
+#define up_getusrsp(regs) \
+    (((uintptr_t*)(regs))[REG_A1])
 
 #undef EXTERN
 #ifdef __cplusplus

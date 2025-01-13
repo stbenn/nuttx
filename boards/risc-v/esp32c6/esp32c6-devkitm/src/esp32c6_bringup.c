@@ -65,6 +65,10 @@
 #  include <nuttx/input/buttons.h>
 #endif
 
+#ifdef CONFIG_ESPRESSIF_EFUSE
+#  include "espressif/esp_efuse.h"
+#endif
+
 #ifdef CONFIG_ESP_RMT
 #  include "esp_board_rmt.h"
 #endif
@@ -90,7 +94,6 @@
 #endif
 
 #ifdef CONFIG_SPI_SLAVE_DRIVER
-#  include "espressif/esp_spi.h"
 #  include "esp_board_spislavedev.h"
 #endif
 
@@ -154,6 +157,14 @@ int esp_bringup(void)
   if (ret < 0)
     {
       _err("Failed to mount tmpfs at %s: %d\n", CONFIG_LIBC_TMPDIR, ret);
+    }
+#endif
+
+#if defined(CONFIG_ESPRESSIF_EFUSE)
+  ret = esp_efuse_initialize("/dev/efuse");
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to init EFUSE: %d\n", ret);
     }
 #endif
 
