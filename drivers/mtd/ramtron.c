@@ -145,6 +145,7 @@ struct ramtron_dev_s
   FAR struct spi_dev_s *dev;               /* Saved SPI interface instance */
   uint8_t sectorshift;
   uint8_t pageshift;
+  uint16_t devid;                           /* SPI device ID to manage CS lines in board */
   uint32_t nsectors;
   uint32_t npages;
   uint32_t speed;                          /* Overridable via ioctl */
@@ -484,7 +485,7 @@ static inline int ramtron_readid(struct ramtron_dev_s *priv)
   /* Lock the SPI bus, configure the bus, and select this FLASH part. */
 
   ramtron_lock(priv);
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), true);
 
   /* Send the "Read ID (RDID)" command */
 
@@ -514,7 +515,7 @@ static inline int ramtron_readid(struct ramtron_dev_s *priv)
 
   /* Deselect the FLASH and unlock the bus */
 
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), false);
   ramtron_unlock(priv->dev);
 
   /* Select part from the part list */
@@ -556,7 +557,7 @@ static void ramtron_writeenable(struct ramtron_dev_s *priv)
 {
   /* Select this FLASH part */
 
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), true);
 
   /* Send "Write Enable (WREN)" command */
 
@@ -564,7 +565,7 @@ static void ramtron_writeenable(struct ramtron_dev_s *priv)
 
   /* Deselect the FLASH */
 
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), false);
   finfo("Enabled\n");
 }
 
@@ -604,7 +605,7 @@ static inline int ramtron_pagewrite(struct ramtron_dev_s *priv,
 
   /* Select this FLASH part */
 
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), true);
 
   /* Send "Page Program (PP)" command */
 
@@ -620,7 +621,7 @@ static inline int ramtron_pagewrite(struct ramtron_dev_s *priv,
 
   /* Deselect the FLASH: Chip Select high */
 
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), false);
   finfo("Written\n");
 
   return OK;
@@ -808,7 +809,7 @@ static ssize_t ramtron_read(FAR struct mtd_dev_s *dev,
 
   /* Select this FLASH part */
 
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), true);
 
   /* Send "Read from Memory " instruction */
 
@@ -824,7 +825,7 @@ static ssize_t ramtron_read(FAR struct mtd_dev_s *dev,
 
   /* Deselect the FLASH and unlock the SPI bus */
 
-  SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+  SPI_SELECT(priv->dev, SPIDEV_FLASH(priv->devid), false);
   ramtron_unlock(priv->dev);
 
   finfo("return nbytes: %d\n", (int)nbytes);
@@ -932,9 +933,15 @@ static int ramtron_ioctl(FAR struct mtd_dev_s *dev,
  *   as instances that can be bound to other functions
  *   (such as a block or character driver front end).
  *
+ * Note:
+ *   This implementation can handle multiple FLASH parts per SPI device by 
+ *   using the spi_devid to handle chip select between devices. The spi_devid
+ *   passed to this function must be handled by the corresponding spi select
+ *   function in board files.
  ****************************************************************************/
 
-FAR struct mtd_dev_s *ramtron_initialize(FAR struct spi_dev_s *dev)
+FAR struct mtd_dev_s *ramtron_initialize(FAR struct spi_dev_s *dev,
+                                        uint16_t spi_devid)
 {
   FAR struct ramtron_dev_s *priv;
 
@@ -942,9 +949,6 @@ FAR struct mtd_dev_s *ramtron_initialize(FAR struct spi_dev_s *dev)
 
   /* Allocate a state structure (we allocate the structure instead of using
    * a fixed, static allocation so that we can handle multiple FLASH devices.
-   * The current implementation would handle only one FLASH part per SPI
-   * device (only because of the SPIDEV_FLASH(0) definition) and so would
-   * have to be extended to handle multiple FLASH parts on the same SPI bus.
    */
 
   priv = (FAR struct ramtron_dev_s *)
@@ -962,10 +966,11 @@ FAR struct mtd_dev_s *ramtron_initialize(FAR struct spi_dev_s *dev)
       priv->mtd.ioctl  = ramtron_ioctl;
       priv->mtd.name   = "ramtron";
       priv->dev        = dev;
+      priv->devid      = spi_devid;
 
       /* Deselect the FLASH */
 
-      SPI_SELECT(dev, SPIDEV_FLASH(0), false);
+      SPI_SELECT(dev, SPIDEV_FLASH(priv->devid), false);
 
       /* Identify the FLASH chip and get its capacity */
 
