@@ -327,6 +327,18 @@ static const struct ramtron_parts_s g_ramtron_parts[] =
 #endif
   },
   {
+    "MB85RS64V",                  /* name */
+    0x03,                         /* id1 */
+    0x02,                         /* id2 */
+    8L * 1024L,                   /* size */
+    2,                            /* addr_len */
+    20000000                      /* speed */
+#ifdef CONFIG_RAMTRON_CHUNKING
+    , false,                      /* chunked */
+    RAMTRON_EMULATE_PAGE_SIZE     /* chunksize */
+#endif
+  },
+  {
     "MB85RS256B",                 /* name */
     0x05,                         /* id1 */
     0x09,                         /* id2 */
