@@ -66,7 +66,7 @@ uint32_t stm32h5_flash_getopt(void);
 void stm32h5_flash_optmodify(uint32_t clear, uint32_t set);
 
 /****************************************************************************
- * Name: stm32h7_flash_swapbanks
+ * Name: stm32h5_flash_swapbanks
  *
  * Description:
  *   Swaps banks 1 and 2 in the processor's memory map.  Takes effect
@@ -74,7 +74,7 @@ void stm32h5_flash_optmodify(uint32_t clear, uint32_t set);
  *
  ****************************************************************************/
 
-void stm32h5_flash_swapbanks(void);
+int stm32h5_flash_swapbanks(void);
 
 /****************************************************************************
  * Name: stm32h7_flash_lock
