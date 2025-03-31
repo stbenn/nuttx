@@ -31,7 +31,7 @@ include armv8-m/Make.defs
 
 ifeq ($(CONFIG_STM32H5_PROGMEM),y)
 CHIP_CSRCS += stm32_flash.c
-#endif
+endif
 
 # Required STM32H5 files
 
