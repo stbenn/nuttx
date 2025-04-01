@@ -57,22 +57,11 @@
  * NOTES:
  *  - This file will only be valid for H56xxx and H57xxx. May be valid for 
  *    H53xxx and H52xxx but that is not verified.
- *  - H7 driver refers to "BLOCKS", in this file they are "sectors" to match
- *    stm documentation. 
+ *  - STM Documentation uses "Flash Sectors" instead of "Blocks". They refer
+ *    to the same thing in this file.
+ *  - This file ASSUMES DUAL BANK flash memory. 
  */
 
-/* Flash size is known from the chip selection:
- *
- *   When CONFIG_STM32H5_FLASH_OVERRIDE_DEFAULT is set the
- *   CONFIG_STM32H5_FLASH_CONFIG_x selects the default FLASH size based on
- *   the chip part number.  This value can be overridden with
- *   CONFIG_STM32H5_FLASH_OVERRIDE_x
- *
- *   Parts STM32H552xC and STM32H562xC have 256Kb of FLASH
- *   Parts STM32H552xE and STM32H562xE have 512Kb of FLASH
- *
- *   N.B. Only Single bank mode is supported
- */
 
 #if !defined(CONFIG_STM32H5_FLASH_OVERRIDE_DEFAULT) && \
     !defined(CONFIG_STM32H5_FLASH_OVERRIDE_B) && \
@@ -102,32 +91,24 @@
 #  endif
 #endif
 
-// TODO: Pretty sure all SKUs that this file applies to are dual bank.
-#if defined(CONFIG_STM32H5_STM32H56XXX) || defined(CONFIG_STM32H5_STM32H57XXX)
-#  define H5_FLASH_DUAL_BANK
-#else
-#  ifdef H5_FLASH_DUAL_BANK
-#    warning "H5_FLASH_DUAL_BANK defined outside of scope. Undefining"
-#  endif
-#  undef H5_FLASH_DUAL_BANK
-#endif
-
 #if defined(CONFIG_STM32H5_FLASH_CONFIG_I)
-#  define H5_FLASH_BANK_NSECTORS    128
+#  define H5_FLASH_BANK_NBLOCKS    128
 #elif defined(CONFIG_STM32H5_FLASH_CONFIG_G)
-#  define H5_FLASH_BANK_NSECTORS    64
+#  define H5_FLASH_BANK_NBLOCKS    64
 #elif defined(CONFIG_STM32H5_FLASH_CONFIG_E)
-#  define H5_FLASH_BANK_NSECTORS    32
+#  define H5_FLASH_BANK_NBLOCKS    32
 #elif defined(CONFIG_STM32H5_FLASH_CONFIG_C)
-#  define H5_FLASH_BANK_NSECTORS    16
+#  define H5_FLASH_BANK_NBLOCKS    16
 #elif defined(CONFIG_STM32H5_FLASH_CONFIG_B)
-#  define H5_FLASH_BANK_NSECTORS    8
+#  define H5_FLASH_BANK_NBLOCKS    8
 #else
 #  warning "No valid STM32H5_FLASH_CONFIG_x defined."
 #endif
 
-#define H5_FLASH_BANKSIZE   (FLASH_SECTOR_SIZE * H5_FLASH_BANK_NSECTORS)
+#define H5_FLASH_BANKSIZE   (FLASH_SECTOR_SIZE * H5_FLASH_BANK_NBLOCKS)
+#define H5_FLASH_NBLOCKS    (2 * H5_FLASH_BANK_NBLOCKS)
 #define H5_FLASH_TOTALSIZE  (2 * H5_FLASH_BANKSIZE)
+#define H5_FLASH_NPAGES     (H5_FLASH_TOTALSIZE / FLASH_PAGE_SIZE)
 
 /* Define the valid configuration  */
 
@@ -144,46 +125,54 @@
  * Private Types
  ****************************************************************************/
 
-// TODO: Is ifbase necessary on H5? H7 has 2 separate base addr for reg per bank
 struct stm32h5_flash_priv_s
 {
-  mutex_t  lock;    /* Bank exclusive */
-  uint32_t ifbase;  /* FLASHIF interface base address */
   uint32_t base;    /* FLASH base address */
-  uint32_t stblock; /* The first Block Number */
-  uint32_t stpage;  /* The first Page Number */
+  uint32_t stblock; /* The first block number */
+  uint32_t stpage;  /* The first page number */
 };
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-/* The STM32H563xx does not have separate register base per bank.*/
-static struct stm32h5_flash_priv_s stm32h5_flash_bank1_priv =
+static struct stm32h5_flash_priv_s flash_bank1_priv =
 {
-  .lock     = NXMUTEX_INITIALIZER,
-  .ifbase   = STM32_FLASHIF_BASE,
-  .base     = STM32_FLASH_BANK1,
-  .stblock  = 0,
-  .stpage   = 0,
+  .base    = STM32_FLASH_BANK1,
+  .stblock = 0,
+  .stpage  = 0
 };
-#if STM32_DUAL_BANK
-#warning "(In Development) .stblock and .stpage of bank2 not initialized properly."
-static struct stm32h5_flash_priv_s stm32h5_flash_bank2_priv =
+static struct stm32h5_flash_priv_s flash_bank2_priv =
 {
-  .lock     = NXMUTEX_INITIALIZER,
-  .ifbase   = STM32_FLASHIF_BASE,
-  .base     = STM32_FLASH_BANK2,
-  .stblock  = 0,
-  .stpage   = 0,
+  .base    = STM32_FLASH_BANK2,
+  .stblock = (H5_FLASH_NBLOCKS / 2),
+  .stpage  = (H5_FLASH_NPAGES / 2),
 };
-#endif
 
 static mutex_t g_lock = NXMUTEX_INITIALIZER;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static inline
+struct stm32h5_flash_priv_s * flash_bank(size_t address)
+{
+  struct stm32h5_flash_priv_s *priv = NULL;
+
+  if (address >= flash_bank1_priv.base &&
+      address < flash_bank1_priv.base + H5_FLASH_BANKSIZE)
+    {
+      priv = &flash_bank1_priv;
+    }
+  else if (address >= flash_bank2_priv.base &&
+           address < flash_bank2_priv.base + H5_FLASH_BANKSIZE)
+    {
+      priv = &flash_bank2_priv;
+    }
+  
+  return priv;
+}
 
 /****************************************************************************
  * Name: flash_unlock_nscr
@@ -448,7 +437,14 @@ int stm32h5_flash_swapbanks(void)
 
 #ifdef CONFIG_ARCH_HAVE_PROGMEM
 
-/* up_progmem_x functions defined in nuttx/include/nuttx/progmem.h */
+/* up_progmem_x functions defined in nuttx/include/nuttx/progmem.h
+ *
+ * Notes on Implementation:
+ *   - The driver implementations DO NOT enforce memory address boundaries.
+ *     For processors with less than 2MB flash, the user is responsible for
+ *     not writing to memory between banks.
+ *     
+ */
 
 size_t up_progmem_pagesize(size_t page)
 {
@@ -457,6 +453,16 @@ size_t up_progmem_pagesize(size_t page)
 
 ssize_t up_progmem_getpage(size_t addr)
 {
+  struct stm32h5_flash_priv_s *priv;
+
+  priv = flash_bank(addr);
+
+  if (priv == NULL)
+    {
+      return -EFAULT;
+    }
+
+  return priv->stpage + ((addr - priv->base) / FLASH_PAGE_SIZE);
 }
 
 size_t up_progmem_getaddress(size_t page)
@@ -466,7 +472,7 @@ size_t up_progmem_getaddress(size_t page)
 
 size_t up_progmem_neraseblocks(void)
 {
-  return PROGMEM_NBLOCKS;
+  return H5_FLASH_NBLOCKS;
 }
 
 bool up_progmem_isuniform(void)
@@ -481,18 +487,15 @@ ssize_t up_progmem_ispageerased(size_t page)
 
 size_t up_progmem_erasesize(size_t block)
 {
-  // return FLASH_SECTOR_SIZE;
+  return FLASH_SECTOR_SIZE;
 }
 
 ssize_t up_progmem_eraseblock(size_t block)
 {
-  #warning "(In Development) up_progmem_eraseblock not implemented"
-
 }
 
 ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 {
-  #warning "(In development) up_progmem_write() is not implemented."
 }
 
 uint8_t up_progmem_erasestate(void)
