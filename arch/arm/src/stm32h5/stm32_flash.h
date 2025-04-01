@@ -45,66 +45,15 @@ extern "C"
 #define EXTERN extern
 #endif
 
-/****************************************************************************
- * Name: stm32h7_flash_getopt
- *
- * Description:
- *   Returns the current flash option bytes from the FLASH_OPTSR_CR register.
- *
- ****************************************************************************/
+void stm32h5_flash_getopt(uint32_t *opt1, uint32_t *opt2);
 
-uint32_t stm32h5_flash_getopt(void);
-
-/****************************************************************************
- * Name: stm32h7_flash_optmodify
- *
- * Description:
- *   Modifies the current flash option bytes, given bits to set and clear.
- *
- ****************************************************************************/
-
-void stm32h5_flash_optmodify(uint32_t clear, uint32_t set);
-
-/****************************************************************************
- * Name: stm32h5_flash_swapbanks
- *
- * Description:
- *   Swaps banks 1 and 2 in the processor's memory map.  Takes effect
- *   the next time the system is reset.
- *
- ****************************************************************************/
+int stm32h5_flash_optmodify(uint32_t clear1, uint32_t set1, uint32_t clear2, uint32_t set2);
 
 int stm32h5_flash_swapbanks(void);
 
-/****************************************************************************
- * Name: stm32h7_flash_lock
- *
- * Description:
- *   Locks a bank
- *
- ****************************************************************************/
+void stm32h5_flash_lock(void);
 
-int stm32h5_flash_lock(void);
-
-/****************************************************************************
- * Name: stm32h7_flash_unlock
- *
- * Description:
- *   Unlocks a bank
- *
- ****************************************************************************/
-
-int stm32h5_flash_unlock(void);
-
-/****************************************************************************
- * Name: stm32h7_flash_writeprotect
- *
- * Description:
- *   Enable or disable the write protection of a flash sector.
- *
- ****************************************************************************/
-
-int stm32h5_flash_writeprotect(size_t page, bool enabled);
+void stm32h5_flash_unlock(void);
 
 #undef EXTERN
 #if defined(__cplusplus)

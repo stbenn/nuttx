@@ -53,6 +53,14 @@
 #define FLASH_SECTOR_SIZE _K(8)
 #define FLASH_PAGE_SIZE     16
 
+/**
+ * NOTES:
+ *  - This file will only be valid for H56xxx and H57xxx. May be valid for 
+ *    H53xxx and H52xxx but that is not verified.
+ *  - H7 driver refers to "BLOCKS", in this file they are "sectors" to match
+ *    stm documentation. 
+ */
+
 /* Flash size is known from the chip selection:
  *
  *   When CONFIG_STM32H5_FLASH_OVERRIDE_DEFAULT is set the
@@ -83,6 +91,7 @@
 
 /* Override of the Flash has been chosen */
 
+// TODO: This needs to be updated to take care of all possibilities
 #if !defined(CONFIG_STM32H5_FLASH_OVERRIDE_DEFAULT)
 #  undef CONFIG_STM32H5_FLASH_CONFIG_C
 #  undef CONFIG_STM32H5_FLASH_CONFIG_E
@@ -92,6 +101,33 @@
 #    define CONFIG_STM32H5_FLASH_CONFIG_E
 #  endif
 #endif
+
+// TODO: Pretty sure all SKUs that this file applies to are dual bank.
+#if defined(CONFIG_STM32H5_STM32H56XXX) || defined(CONFIG_STM32H5_STM32H57XXX)
+#  define H5_FLASH_DUAL_BANK
+#else
+#  ifdef H5_FLASH_DUAL_BANK
+#    warning "H5_FLASH_DUAL_BANK defined outside of scope. Undefining"
+#  endif
+#  undef H5_FLASH_DUAL_BANK
+#endif
+
+#if defined(CONFIG_STM32H5_FLASH_CONFIG_I)
+#  define H5_FLASH_BANK_NSECTORS    128
+#elif defined(CONFIG_STM32H5_FLASH_CONFIG_G)
+#  define H5_FLASH_BANK_NSECTORS    64
+#elif defined(CONFIG_STM32H5_FLASH_CONFIG_E)
+#  define H5_FLASH_BANK_NSECTORS    32
+#elif defined(CONFIG_STM32H5_FLASH_CONFIG_C)
+#  define H5_FLASH_BANK_NSECTORS    16
+#elif defined(CONFIG_STM32H5_FLASH_CONFIG_B)
+#  define H5_FLASH_BANK_NSECTORS    8
+#else
+#  warning "No valid STM32H5_FLASH_CONFIG_x defined."
+#endif
+
+#define H5_FLASH_BANKSIZE   (FLASH_SECTOR_SIZE * H5_FLASH_BANK_NSECTORS)
+#define H5_FLASH_TOTALSIZE  (2 * H5_FLASH_BANKSIZE)
 
 /* Define the valid configuration  */
 
@@ -103,7 +139,6 @@
 #define FLASH_OBKKEY2   0x5E7F4C5D
 
 #define FLASH_ERASEDVALUE     0xffu
-#define FLASH_ERASEDVALUE_DW  0xffffffffu
 #define FLASH_TIMEOUT_VALUE   5000000   /* 5s */
 /****************************************************************************
  * Private Types
@@ -144,62 +179,42 @@ static struct stm32h5_flash_priv_s stm32h5_flash_bank2_priv =
 };
 #endif
 
+static mutex_t g_lock = NXMUTEX_INITIALIZER;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: stm32h5_unlock_flash
- *
+ * Name: flash_unlock_nscr
+ * 
  * Description:
- *   Unlock the Bank
- *
+ *    Unlock the non-secure control register.
  ****************************************************************************/
 
-static void stm32h5_unlock_flash(struct stm32h5_flash_priv_s *priv)
+static void flash_unlock_nscr(void)
 {
-  #warning "stm32h5_unlock_flash() not implemented yet."
+  while (getreg32(STM32_FLASH_NSSR) & FLASH_NSSR_BSY)
+    {
+    }
+  
+  if (getreg32(STM32_FLASH_NSCR) & FLASH_NSCR_LOCK)
+    {
+      putreg32(FLASH_KEY1, STM32_FLASH_NSKEYR);
+      putreg32(FLASH_KEY2, STM32_FLASH_NSKEYR);
+    }
 }
 
 /****************************************************************************
- * Name: stm32h5_lock_flash
- *
+ * Name: flash_lock_nscr
+ * 
  * Description:
- *   Lock the Bank
- *
+ *    Lock the non-secure control register.
  ****************************************************************************/
 
-static void stm32h5_lock_flash(struct stm32h5_flash_priv_s *priv)
+static void flash_lock_nscr(void)
 {
-  #warning "stm32h5_lock_flash() not implemented yet"
-}
-
-/****************************************************************************
- * Name: stm32h5_flash_size
- *
- * Description:
- *   Returns the size in bytes of FLASH
- *
- ****************************************************************************/
-
-static inline uint32_t stm32h5_flash_size(
-    struct stm32h5_flash_priv_s *priv)
-{
-  #warning "stm32h5_flash_size() not implemented yet"
-}
-
-/****************************************************************************
- * Name: stm32h5_flash_bank
- *
- * Description:
- *   Returns the priv pointer to the correct bank
- *
- ****************************************************************************/
-
-static inline
-struct stm32h5_flash_priv_s * stm32h5_flash_bank(size_t address)
-{
-  #warning "stm32h5_flash_bank() not implemented yet"
+  modifyreg32(STM32_FLASH_NSCR, 0, FLASH_NSCR_LOCK);
 }
 
 /****************************************************************************
@@ -291,19 +306,6 @@ static void flash_lock_opt(void)
 }
 
 /****************************************************************************
- * Name: stm32h5_save_flashopt
- *
- * Description:
- *   Save the flash option bytes to non-volatile storage.
- *
- ****************************************************************************/
-
-static void stm32h5_save_flashopt(struct stm32h5_flash_priv_s *priv)
-{
-  #warning "stm32h5_save_flashopt() not implemented yet"
-}
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -311,52 +313,47 @@ static void stm32h5_save_flashopt(struct stm32h5_flash_priv_s *priv)
  * Name: stm32h5_flash_unlock
  *
  * Description:
- *   Unlocks a bank
- *
+ *   Unlock flash control
  ****************************************************************************/
 
-int stm32h5_flash_unlock(size_t addr)
+void stm32h5_flash_unlock(void)
 {
-  #warning "stm32h5_flash_unlock() not implemented"
+  nxmutex_lock(&g_lock);
+  flash_unlock_nscr();
+  nxmutex_unlock(&g_lock);
 }
 
 /****************************************************************************
  * Name: stm32h5_flash_lock
  *
  * Description:
- *   Locks a bank
- *
+ *   Lock flash control
  ****************************************************************************/
 
-int stm32h5_flash_lock(size_t addr)
+void stm32h5_flash_lock(void)
 {
-  #warning "stm32h5_flash_lock() not implemented yet"
-}
-
-/****************************************************************************
- * Name: stm32h5_flash_writeprotect
- *
- * Description:
- *   Enable or disable the write protection of a flash sector.
- *
- ****************************************************************************/
-
-int stm32h5_flash_writeprotect(size_t block, bool enabled)
-{
-  #warning "stm32h5_flash_writeprotect() not implemented"
+  nxmutex_lock(&g_lock);
+  flash_lock_nscr();
+  nxmutex_unlock(&g_lock);
 }
 
 /****************************************************************************
  * Name: stm32h5_flash_getopt
  *
  * Description:
- *   Returns the current flash option bytes from the FLASH_OPTSR_CR register.
+ *   Read the current flash option bytes from FLASH_OPTSR_CUR and
+ *   FLASH_OPTSR2_CUR registers.
+ * 
+ * Input Parameters:
+ *   opt1 - result from FLASH_OPTSR_CUR
+ *   opt2 - result from FLASH_OPTSR2_CUR
  *
  ****************************************************************************/
 
-uint32_t stm32h5_flash_getopt(void)
+void stm32h5_flash_getopt(uint32_t *opt1, uint32_t *opt2)
 {
-  #warning "stm32h5_flash_getopt() not implemented"
+  *opt1 = getreg32(STM32_FLASH_OPTSR_CUR);
+  *opt2 = getreg32(STM32_FLASH_OPTSR2_CUR);
 }
 
 /****************************************************************************
@@ -364,12 +361,50 @@ uint32_t stm32h5_flash_getopt(void)
  *
  * Description:
  *   Modifies the current flash option bytes, given bits to set and clear.
- *
+ * 
+ * Input Parameters:
+ *   clear1 - clear bits for FLASH_OPTSR
+ *   set1   - set bits for FLASH_OPTSR
+ *   clear2 - clear bits for FLASH_OPTSR2
+ *   set2   - set bits for FLASH_OPTSR2
+ * 
+ * Returned Value:
+ *   Zero or error value
+ * 
+ *     -EBUSY: Timeout occurred waiting for previous FLASH operation to occur,
+ *            or there was data in the flash data buffer.
+ *   
  ****************************************************************************/
 
-void stm32h5_flash_optmodify(uint32_t clear, uint32_t set)
+int stm32h5_flash_optmodify(uint32_t clear1, uint32_t set1,
+                             uint32_t clear2, uint32_t set2)
 {
-  #warning "stm32h5_flash_optmodify() not implemented."
+  int ret;
+  uint32_t reg;
+
+  ret = flash_wait_for_operation();
+  if (ret != 0)
+    {
+      -EBUSY;
+    }
+    
+  reg = getreg32(STM32_FLASH_NSSR);
+  if (reg & FLASH_NSSR_DBNE)
+    {
+      -EBUSY;
+    }
+
+  flash_unlock_opt();
+
+  modifyreg32(STM32_FLASH_OPTSR_PRG, clear1, set1);
+  modifyreg32(STM32_FLASH_OPTSR2_PRG, clear2, set2);
+
+  modifyreg32(STM32_FLASH_OPTCR, 0, FLASH_OPTCR_OPTSTRT);
+
+  while (getreg32(STM32_FLASH_NSSR) & FLASH_NSSR_BSY)
+    {
+    }
+
 }
 
 /****************************************************************************
@@ -407,8 +442,8 @@ int stm32h5_flash_swapbanks(void)
   while ((getreg32(STM32_FLASH_OPTSR_CUR) >> 31) != (reg >> 31))
     {
     }
-  return 0;
 
+  return 0;
 }
 
 #ifdef CONFIG_ARCH_HAVE_PROGMEM
@@ -436,7 +471,7 @@ size_t up_progmem_neraseblocks(void)
 
 bool up_progmem_isuniform(void)
 {
-  // return true;
+  return true;
 }
 
 ssize_t up_progmem_ispageerased(size_t page)
