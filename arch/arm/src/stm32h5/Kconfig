@@ -136,7 +136,7 @@ config STM32H5_FLASH_CONFIG_E
 config STM32H5_FLASH_CONFIG_G
 	bool
 	default n
-	depends on STM32H5_STM32H6XXX
+	depends on STM32H5_STM32H56XXX
 
 config STM32H5_FLASH_CONFIG_I
 	bool
