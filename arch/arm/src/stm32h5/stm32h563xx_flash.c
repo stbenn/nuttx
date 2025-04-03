@@ -735,8 +735,15 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
           goto exit_with_unlock;
         }
       
-      // TODO: Check for ECC errors.
-      // If ECC err, ret = -EIO; goto exit_with_unlock;
+      /* H5 corrects single ECC errors, so only check double errors */
+
+      if (getreg32(STM32_FLASH_ECCDETR) & FLASH_ECCDETR_ECCD)
+        {
+          modifyreg32(STM32_FLASH_NSCR, FLASH_NSCR_PG, 0);
+          modifyreg32(STM32_FLASH_ECCDETR, 0, FLASH_ECCDETR_ECCD);          
+          ret = -EIO;
+          goto exit_with_unlock;
+        }
 
     }
 
@@ -765,8 +772,13 @@ exit_with_unlock:
               break;
             }
 
-          sr = getreg32(STM32_FLASH_NSSR);
-          // TODO: ECC Detection. If one occurs, written = -EIO; break;
+          if (getreg32(STM32_FLASH_ECCDETR) & FLASH_ECCDETR_ECCD)
+            {
+              modifyreg32(STM32_FLASH_NSCR, FLASH_NSCR_PG, 0);
+              modifyreg32(STM32_FLASH_ECCDETR, 0, FLASH_ECCDETR_ECCD);          
+              written = -EIO;
+              break;
+            }
         }
       
       modifyreg32(STM32_FLASH_NSCCR, 0, ~0);
