@@ -120,6 +120,7 @@
 #define FLASH_OBKKEY2   0x5E7F4C5D
 
 #define FLASH_ERASEDVALUE     0xffu
+#define FLASH_ERASEDVALUE_DW  0xffffffffu
 #define FLASH_TIMEOUT_VALUE   5000000   /* 5s */
 /****************************************************************************
  * Private Types
@@ -216,7 +217,41 @@ static void flash_lock_nscr(void)
 
 static int stm32h5_israngeerased(size_t startaddress, size_t size)
 {
-  #warning "stm32h5_israngerased() not implemented yet"
+  uint32_t *addr;
+  uint8_t *baddr;
+  size_t count = 0;
+  size_t bwritten = 0;
+
+  if (!flash_bank(startaddress) || !flash_bank(startaddress + size - 1))
+    {
+      return -EIO;
+    }
+  
+  addr = (uint32_t *)startaddress;
+  while (count + 4 <= size)
+    {
+      if (getreg32(addr) != FLASH_ERASEDVALUE_DW)
+        {
+          bwritten++;
+        }
+      
+      addr++;
+      count += 4;
+    }
+  
+  baddr = (uint8_t *)addr;
+  while (count < size)
+    {
+      if (getreg8(baddr) != FLASH_ERASEDVALUE)
+        {
+          bwritten++;
+        }
+      
+      baddr++;
+      count++;
+    }
+  
+  return bwritten;
 }
 
 /****************************************************************************
@@ -467,7 +502,14 @@ ssize_t up_progmem_getpage(size_t addr)
 
 size_t up_progmem_getaddress(size_t page)
 {
+  struct stm32h5_flash_priv_s *priv;
+  if (page >= H5_FLASH_NPAGES)
+    {
+      return SIZE_MAX;
+    }
 
+  priv = flash_bank(STM32_FLASH_BASE + (page * FLASH_PAGE_SIZE));
+  return priv->base + (page - priv->stpage) * FLASH_PAGE_SIZE;
 }
 
 size_t up_progmem_neraseblocks(void)
@@ -482,7 +524,26 @@ bool up_progmem_isuniform(void)
 
 ssize_t up_progmem_ispageerased(size_t page)
 {
+  size_t addr;
+  size_t count;
+  size_t bwritten = 0;
 
+  if (page >= H5_FLASH_NPAGES)
+    {
+      return -EFAULT;
+    }
+
+  /* Verify */
+
+  for (addr = up_progmem_getaddress(page), count = up_progmem_pagesize(page);
+       count; count--, addr++)
+    {
+      if (getreg8(addr) != FLASH_ERASEDVALUE)
+        {
+          bwritten++;
+        }
+    }
+  return bwritten;
 }
 
 size_t up_progmem_erasesize(size_t block)
@@ -492,6 +553,85 @@ size_t up_progmem_erasesize(size_t block)
 
 ssize_t up_progmem_eraseblock(size_t block)
 {
+  struct stm32h5_flash_priv_s *priv;
+  int ret;
+  size_t block_address = STM32_FLASH_BASE + (block * FLASH_SECTOR_SIZE);
+
+  if (block >= H5_FLASH_NBLOCKS)
+    {
+      return -EFAULT;
+    }
+  
+  priv = flash_bank(block_address);
+
+  ret = nxmutex_lock(&g_lock);
+  if (ret < 0)
+    {
+      return (ssize_t)ret;
+    }
+  
+  if (flash_wait_for_operation())
+    {
+      ret = -EIO;
+      goto exit_with_lock;
+    }
+
+  /* Get flash ready and begin erasing single block */
+
+  stm32h5_flash_unlock();
+
+  // TODO: Erase block here
+
+  if (priv->base == STM32_FLASH_BANK1)
+    {
+      modifyreg32(STM32_FLASH_NSCR, FLASH_NSCR_BKSEL, FLASH_NSCR_SER);
+    }
+  else
+    {
+      modifyreg32(STM32_FLASH_NSCR, 0, FLASH_NSCR_BKSEL | FLASH_NSCR_SER);
+    }
+  
+  /* This is OK because modifyreg32 clears before set. */
+  
+  modifyreg32(STM32_FLASH_NSCR, FLASH_NSCR_SNB_MASK,
+              FLASH_NSCR_SNB(block - priv->stblock));
+  
+  modifyreg32(STM32_FLASH_NSCCR, 0, FLASH_NSCR_STRT);
+
+
+  /* Wait for erase operation to complete */
+
+  if (flash_wait_for_operation())
+    {
+      ret = -EIO;
+      goto exit_with_unlock;
+    }
+
+  modifyreg32(STM32_FLASH_NSCR, FLASH_NSCR_SER, 0);
+  modifyreg32(STM32_FLASH_NSCCR, FLASH_NSCR_SNB_MASK, 0);
+
+  ret = 0;
+  up_invalidate_dcache(block_address, block_address + FLASH_SECTOR_SIZE);
+
+exit_with_unlock:
+  stm32h5_flash_lock();
+
+exit_with_lock:
+  nxmutex_unlock(&g_lock);
+
+  /* Verify */
+
+  if (ret == 0 &&
+      stm32h5_israngeerased(block_address, up_progmem_erasesize(block)) == 0)
+    {
+      ret = up_progmem_erasesize(block); /* Success */
+    }
+  else
+    {
+      ret = -EIO; /* Failure */
+    }
+
+  return ret;
 }
 
 ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
