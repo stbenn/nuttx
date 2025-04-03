@@ -156,6 +156,14 @@ static mutex_t g_lock = NXMUTEX_INITIALIZER;
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: flash_bank
+ * 
+ * Description:
+ *    Returns the priv pointer to the correct bank
+ *
+ ****************************************************************************/
+
 static inline
 struct stm32h5_flash_priv_s * flash_bank(size_t address)
 {
@@ -180,6 +188,7 @@ struct stm32h5_flash_priv_s * flash_bank(size_t address)
  * 
  * Description:
  *    Unlock the non-secure control register.
+ *
  ****************************************************************************/
 
 static void flash_unlock_nscr(void)
@@ -200,6 +209,7 @@ static void flash_unlock_nscr(void)
  * 
  * Description:
  *    Lock the non-secure control register.
+ *
  ****************************************************************************/
 
 static void flash_lock_nscr(void)
@@ -338,6 +348,7 @@ static void flash_lock_opt(void)
  *
  * Description:
  *   Unlock flash control
+ *
  ****************************************************************************/
 
 void stm32h5_flash_unlock(void)
@@ -352,6 +363,7 @@ void stm32h5_flash_unlock(void)
  *
  * Description:
  *   Lock flash control
+ *
  ****************************************************************************/
 
 void stm32h5_flash_lock(void)
@@ -367,7 +379,7 @@ void stm32h5_flash_lock(void)
  * Description:
  *   Read the current flash option bytes from FLASH_OPTSR_CUR and
  *   FLASH_OPTSR2_CUR registers.
- * 
+ *
  * Input Parameters:
  *   opt1 - result from FLASH_OPTSR_CUR
  *   opt2 - result from FLASH_OPTSR2_CUR
@@ -385,19 +397,19 @@ void stm32h5_flash_getopt(uint32_t *opt1, uint32_t *opt2)
  *
  * Description:
  *   Modifies the current flash option bytes, given bits to set and clear.
- * 
+ *
  * Input Parameters:
  *   clear1 - clear bits for FLASH_OPTSR
  *   set1   - set bits for FLASH_OPTSR
  *   clear2 - clear bits for FLASH_OPTSR2
  *   set2   - set bits for FLASH_OPTSR2
- * 
+ *
  * Returned Value:
  *   Zero or error value
  * 
  *     -EBUSY: Timeout occurred waiting for previous FLASH operation to occur,
  *            or there was data in the flash data buffer.
- *   
+ *
  ****************************************************************************/
 
 int stm32h5_flash_optmodify(uint32_t clear1, uint32_t set1,
@@ -440,7 +452,7 @@ int stm32h5_flash_optmodify(uint32_t clear1, uint32_t set1,
  *
  * Returned Value:
  *      Zero or error value
- * 
+ *
  *      -ETIMEDOUT: Timeout occurred waiting for previous operation to occur.
  ****************************************************************************/
 
@@ -478,7 +490,7 @@ int stm32h5_flash_swapbanks(void)
  *   - The driver implementations DO NOT enforce memory address boundaries.
  *     For processors with less than 2MB flash, the user is responsible for
  *     not writing to memory between banks.
- *     
+ *
  */
 
 size_t up_progmem_pagesize(size_t page)
@@ -636,6 +648,133 @@ exit_with_lock:
 
 ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 {
+  struct stm32h5_flash_priv_s *priv;
+  uint32_t     *fp;
+  uint32_t     *rp;
+  uint32_t     *ll        = (uint32_t *)buf;
+  size_t       faddr;
+  size_t       written    = count;
+  int          ret;
+  const size_t pagesize   = up_progmem_pagesize(0); /* 128bit, 16 bytes per page */
+  const size_t llperpage  = pagesize / sizeof(uint32_t);
+  size_t       pcount     = count / pagesize;
+  uint32_t     sr;
+
+  priv = flash_bank(addr);
+
+  if (priv == NULL)
+    {
+      return -EFAULT;
+    }
+  
+  /* Check for valid address range */
+
+  if (addr < priv->base ||
+      addr + count > priv->base + (H5_FLASH_TOTALSIZE / 2))
+    {
+      return -EFAULT;
+    }
+
+  ret = nxmutex_lock(&g_lock);
+  if (ret < 0)
+    {
+      return (ssize_t)ret;
+    }
+
+  /* Check address and count alignment */
+
+  DEBUGASSERT(!(addr % pagesize));
+  DEBUGASSERT(!(count % pagesize));
+
+  if (flash_wait_for_operation())
+    {
+      written = -EIO;
+      goto exit_with_lock;
+    }
+
+  /* Get flash ready for write */
+
+  stm32h5_flash_unlock();
+
+  if (priv->base == STM32_FLASH_BANK1)
+    {
+      modifyreg32(STM32_FLASH_NSCR, FLASH_NSCR_BKSEL, FLASH_NSCR_PG);
+    }
+  else
+    {
+      modifyreg32(STM32_FLASH_NSCR, 0, FLASH_NSCR_BKSEL | FLASH_NSCR_PG);
+    }
+  
+  /* Write */
+
+  for (ll = (uint32_t *)buf, faddr = addr; pcount;
+       pcount -= 1, ll += llperpage, faddr += pagesize)
+    {
+      fp = (uint32_t *)faddr;
+      rp = ll;
+
+      UP_MB();
+
+      /* Write 4 32 bit word and wait to complete */
+
+      *fp++ = *rp++;
+      *fp++ = *rp++;
+      *fp++ = *rp++;
+      *fp++ = *rp++;
+
+      /* Data synchronous Barrier (DSB) just after the write operation. This
+       * will force the CPU to respect the sequence of instruction (no
+       * optimization).
+       */
+
+      UP_MB();
+
+      if (flash_wait_for_operation())
+        {
+          written = -EIO;
+          goto exit_with_unlock;
+        }
+      
+      // TODO: Check for ECC errors.
+      // If ECC err, ret = -EIO; goto exit_with_unlock;
+
+    }
+
+  modifyreg32(STM32_FLASH_NSCR, FLASH_NSCR_PG, 0);
+  modifyreg32(STM32_FLASH_NSCCR, 0, ~0);
+
+exit_with_unlock:
+  stm32h5_flash_lock();
+
+  if (written > 0)
+    {
+      for (ll = (uint32_t *)buf, faddr = addr, pcount = count / pagesize;
+           pcount; pcount -= 1, ll += llperpage, faddr += pagesize)
+        {
+          fp = (uint32_t *)faddr;
+          rp = ll;
+
+          modifyreg32(STM32_FLASH_NSCCR, 0, ~0);
+
+          if ((*fp++ != *rp++) ||
+              (*fp++ != *rp++) ||
+              (*fp++ != *rp++) ||
+              (*fp++ != *rp++))
+            {
+              written = -EIO;
+              break;
+            }
+
+          sr = getreg32(STM32_FLASH_NSSR);
+          // TODO: ECC Detection. If one occurs, written = -EIO; break;
+        }
+      
+      modifyreg32(STM32_FLASH_NSCCR, 0, ~0);
+    }
+
+exit_with_lock:
+  nxmutex_unlock(&g_lock);
+  return written;
 }
 
 uint8_t up_progmem_erasestate(void)
