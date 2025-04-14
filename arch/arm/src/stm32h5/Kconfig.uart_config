@@ -1,0 +1,451 @@
+
+config STM32H5_SERIALDRIVER
+	bool
+
+menu "[LP]U[S]ART Configuration"
+	depends on STM32H5_USART
+
+choice
+	prompt "LPUART1 Driver Configuration"
+	default STM32H5_LPUART1_SERIALDRIVER
+	depends on STM32H5_LPUART1
+
+config STM32H5_LPUART1_SERIALDRIVER
+	bool "Standard serial driver"
+	select LPUART1_SERIALDRIVER
+	select STM32H5_SERIALDRIVER
+
+endchoice # LPUART1 Driver Configuration
+
+if LPUART1_SERIALDRIVER
+
+config LPUART1_RS485
+	bool "RS-485 on LPUART1"
+	default n
+	depends on STM32H5_LPUART1
+	---help---
+		Enable RS-485 interface on LPUART1. Your board config will have to
+		provide GPIO_LPUART1_RS485_DIR pin definition. Currently it cannot be
+		used with LPUART1_RXDMA.
+
+config LPUART1_RS485_DIR_POLARITY
+	int "LPUART1 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on LPUART1_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on LPUART1. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # LPUART1_SERIALDRIVER
+
+choice
+	prompt "USART1 Driver Configuration"
+	default STM32H5_USART1_SERIALDRIVER
+	depends on STM32H5_USART1
+
+config STM32H5_USART1_SERIALDRIVER
+	bool "Standard serial driver"
+	select USART1_SERIALDRIVER
+	select STM32H5_SERIALDRIVER
+
+endchoice # USART1 Driver Configuration
+
+if USART1_SERIALDRIVER
+
+config USART1_RS485
+	bool "RS-485 on USART1"
+	default n
+	depends on STM32H5_USART1
+	---help---
+		Enable RS-485 interface on USART1. Your board config will have to
+		provide GPIO_USART1_RS485_DIR pin definition. Currently it cannot be
+		used with USART1_RXDMA.
+
+config USART1_RS485_DIR_POLARITY
+	int "USART1 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on USART1_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on USART1. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # USART1_SERIALDRIVER
+
+choice
+	prompt "USART2 Driver Configuration"
+	default STM32H5_USART2_SERIALDRIVER
+	depends on STM32H5_USART2
+
+config STM32H5_USART2_SERIALDRIVER
+	bool "Standard serial driver"
+	select USART2_SERIALDRIVER
+	select STM32H5_SERIALDRIVER
+
+endchoice # USART2 Driver Configuration
+
+if USART2_SERIALDRIVER
+
+config USART2_RS485
+	bool "RS-485 on USART2"
+	default n
+	depends on STM32H5_USART2
+	---help---
+		Enable RS-485 interface on USART2. Your board config will have to
+		provide GPIO_USART2_RS485_DIR pin definition. Currently it cannot be
+		used with USART2_RXDMA.
+
+config USART2_RS485_DIR_POLARITY
+	int "USART2 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on USART2_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on USART2. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # USART2_SERIALDRIVER
+
+choice
+	prompt "USART3 Driver Configuration"
+	default STM32H5_USART3_SERIALDRIVER
+	depends on STM32H5_USART3
+
+config STM32H5_USART3_SERIALDRIVER
+	bool "Standard serial driver"
+	select USART3_SERIALDRIVER
+	select STM32H5_SERIALDRIVER
+
+endchoice # USART3 Driver Configuration
+
+if USART3_SERIALDRIVER
+
+config USART3_RS485
+	bool "RS-485 on USART3"
+	default n
+	depends on STM32H5_USART3
+	---help---
+		Enable RS-485 interface on USART3. Your board config will have to
+		provide GPIO_USART3_RS485_DIR pin definition. Currently it cannot be
+		used with USART3_RXDMA.
+
+config USART3_RS485_DIR_POLARITY
+	int "USART3 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on USART3_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on USART3. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # USART3_SERIALDRIVER
+
+choice
+	prompt "UART4 Driver Configuration"
+	default STM32H5_UART4_SERIALDRIVER
+	depends on STM32H5_UART4
+
+config STM32H5_UART4_SERIALDRIVER
+	bool "Standard serial driver"
+	select UART4_SERIALDRIVER
+	select STM32H5_SERIALDRIVER
+
+endchoice # UART4 Driver Configuration
+
+if UART4_SERIALDRIVER
+
+config UART4_RS485
+	bool "RS-485 on UART4"
+	default n
+	depends on STM32H5_UART4
+	---help---
+		Enable RS-485 interface on UART4. Your board config will have to
+		provide GPIO_UART4_RS485_DIR pin definition. Currently it cannot be
+		used with UART4_RXDMA.
+
+config UART4_RS485_DIR_POLARITY
+	int "UART4 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on UART4_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART4. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # UART4_SERIALDRIVER
+
+choice
+	prompt "UART5 Driver Configuration"
+	default STM32H5_UART5_SERIALDRIVER
+	depends on STM32H5_UART5
+
+config STM32H5_UART5_SERIALDRIVER
+	bool "Standard serial driver"
+	select UART5_SERIALDRIVER
+	select STM32H5_SERIALDRIVER
+
+endchoice # UART5 Driver Configuration
+
+if UART5_SERIALDRIVER
+
+config UART5_RS485
+	bool "RS-485 on UART5"
+	default n
+	depends on STM32H5_UART5
+	---help---
+		Enable RS-485 interface on UART5. Your board config will have to
+		provide GPIO_UART5_RS485_DIR pin definition. Currently it cannot be
+		used with UART5_RXDMA.
+
+config UART5_RS485_DIR_POLARITY
+	int "UART5 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on UART5_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART5. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # UART5_SERIALDRIVER
+
+if USART6_SERIALDRIVER
+
+config USART6_RS485
+	bool "RS-485 on USART6"
+	default n
+	depends on STM32H5_USART6
+	---help---
+		Enable RS-485 interface on USART6. Your board config will have to
+		provide GPIO_USART6_RS485_DIR pin definition. Currently it cannot be
+		used with USART6_RXDMA.
+
+config USART6_RS485_DIR_POLARITY
+	int "USART6 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on USART6_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on USART6. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # USART6_SERIALDRIVER
+
+if UART7_SERIALDRIVER
+
+config UART7_RS485
+	bool "RS-485 on UART7"
+	default n
+	depends on STM32H5_UART7
+	---help---
+		Enable RS-485 interface on UART7. Your board config will have to
+		provide GPIO_UART7_RS485_DIR pin definition. Currently it cannot be
+		used with UART7_RXDMA.
+
+config UART7_RS485_DIR_POLARITY
+	int "UART7 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on UART7_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART7. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # UART7_SERIALDRIVER
+
+if UART8_SERIALDRIVER
+
+config UART8_RS485
+	bool "RS-485 on UART8"
+	default n
+	depends on STM32H5_UART8
+	---help---
+		Enable RS-485 interface on UART8. Your board config will have to
+		provide GPIO_UART8_RS485_DIR pin definition. Currently it cannot be
+		used with UART8_RXDMA.
+
+config UART8_RS485_DIR_POLARITY
+	int "UART8 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on UART8_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART8. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # UART8_SERIALDRIVER
+
+if UART9_SERIALDRIVER
+
+config UART9_RS485
+	bool "RS-485 on UART9"
+	default n
+	depends on STM32H5_UART9
+	---help---
+		Enable RS-485 interface on UART9. Your board config will have to
+		provide GPIO_UART9_RS485_DIR pin definition. Currently it cannot be
+		used with UART9_RXDMA.
+
+config UART9_RS485_DIR_POLARITY
+	int "UART9 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on UART9_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART9. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # UART9_SERIALDRIVER
+
+if USART10_SERIALDRIVER
+
+config USART10_RS485
+	bool "RS-485 on USART10"
+	default n
+	depends on STM32H5_USART10
+	---help---
+		Enable RS-485 interface on USART10. Your board config will have to
+		provide GPIO_USART10_RS485_DIR pin definition. Currently it cannot be
+		used with USART10_RXDMA.
+
+config USART10_RS485_DIR_POLARITY
+	int "USART10 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on USART10_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on USART10. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # USART10_SERIALDRIVER
+
+if USART11_SERIALDRIVER
+
+config USART11_RS485
+	bool "RS-485 on USART11"
+	default n
+	depends on STM32H5_USART11
+	---help---
+		Enable RS-485 interface on USART11. Your board config will have to
+		provide GPIO_USART11_RS485_DIR pin definition. Currently it cannot be
+		used with USART11_RXDMA.
+
+config USART11_RS485_DIR_POLARITY
+	int "USART11 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on USART11_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on USART11. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # USART11_SERIALDRIVER
+
+if UART12_SERIALDRIVER
+
+config UART12_RS485
+	bool "RS-485 on UART12"
+	default n
+	depends on STM32H5_UART12
+	---help---
+		Enable RS-485 interface on UART12. Your board config will have to
+		provide GPIO_UART12_RS485_DIR pin definition. Currently it cannot be
+		used with UART12_RXDMA.
+
+config UART12_RS485_DIR_POLARITY
+	int "UART12 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on UART12_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART12. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
+endif # UART12_SERIALDRIVER
+
+if STM32H5_SERIALDRIVER
+
+comment "Serial Driver Configuration"
+
+config STM32H5_SERIAL_DISABLE_REORDERING
+	bool "Disable reordering of ttySx devices."
+	depends on STM32H5_USART1 || STM32H5_USART2 || STM32H5_USART3 || STM32H5_UART4 || STM32H5_UART5
+	default n
+	---help---
+		NuttX per default reorders the serial ports (/dev/ttySx) so that the
+		console is always on /dev/ttyS0. If more than one UART is in use this
+		can, however, have the side-effect that all port mappings
+		(hardware USART1 -> /dev/ttyS0) change if the console is moved to another
+		UART. This is in particular relevant if a project uses the USB console
+		in some boards and a serial console in other boards, but does not
+		want the side effect of having all serial port names change when just
+		the console is moved from serial to USB.
+
+config STM32H5_FLOWCONTROL_BROKEN
+	bool "Use Software UART RTS flow control"
+	depends on STM32H5_USART
+	default n
+	---help---
+		Enable UART RTS flow control using Software. Because STM
+		Current STM32 have broken HW based RTS behavior (they assert
+		nRTS after every byte received)  Enable this setting workaround
+		this issue by using software based management of RTS
+
+config STM32H5_USART_BREAKS
+	bool "Add TIOxSBRK to support sending Breaks"
+	depends on STM32H5_USART
+	default n
+	---help---
+		Add TIOCxBRK routines to send a line break per the STM32 manual, the
+		break will be a pulse based on the value M. This is not a BSD compatible
+		break.
+
+config STM32H5_SERIALBRK_BSDCOMPAT
+	bool "Use GPIO To send Break"
+	depends on STM32H5_USART && STM32H5_USART_BREAKS
+	default n
+	---help---
+		Enable using GPIO on the TX pin to send a BSD compatible break:
+		TIOCSBRK will start the break and TIOCCBRK will end the break.
+		The current STM32H5 U[S]ARTS have no way to leave the break on
+		(TX=LOW) because software starts the break and then the hardware
+		automatically clears the break. This makes it difficult to send
+		a long break.
+
+config STM32H5_USART_SINGLEWIRE
+	bool "Single Wire Support"
+	default n
+	depends on STM32H5_USART
+	---help---
+		Enable single wire UART support.  The option enables support for the
+		TIOCSSINGLEWIRE ioctl in the STM32H5 serial driver.
+
+config STM32H5_USART_INVERT
+	bool "Signal Invert Support"
+	default n
+	depends on STM32H5_USART
+	---help---
+		Enable signal inversion UART support. The option enables support for the
+		TIOCSINVERT ioctl in the STM32H5 serial driver.
+
+config STM32H5_USART_SWAP
+	bool "Swap RX/TX pins support"
+	default n
+	depends on STM32H5_USART
+	---help---
+		Enable RX/TX pin swapping support. The option enables support for the
+		TIOCSSWAP ioctl in the STM32H5 serial driver.
+
+if PM
+
+config STM32H5_PM_SERIAL_ACTIVITY
+	int "PM serial activity"
+	default 10
+	---help---
+		PM activity reported to power management logic on every serial
+		interrupt.
+
+endif
+endif # STM32H5_SERIALDRIVER
+
+endmenu # U[S]ART Configuration
