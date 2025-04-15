@@ -43,9 +43,7 @@
 /* Timer devices may be used for different purposes.  One special purpose is
  * to control periodic ADC sampling.  If CONFIG_STM32H5_TIMn is defined then
  * CONFIG_STM32H5_TIMn_ADC must also be defined to indicate that timer "n"
- * is intended to be used for that purpose. Timers 1,2,3,6 and 15 may be
- * used on STM32H5X3, while STM32H5X6 adds support for timers 4 and 8 as
- * well.
+ * is intended to be used for that purpose.
  */
 
 #ifndef CONFIG_STM32H5_TIM1

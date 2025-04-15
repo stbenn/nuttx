@@ -50,6 +50,8 @@
 #include "stm32_tim.h"
 #include "stm32_rcc.h"
 
+/* ADC "upper half" support must be enabled */
+
 #ifdef CONFIG_ADC
 
 #if defined(CONFIG_STM32H5_ADC1) || defined(CONFIG_STM32H5_ADC2)
