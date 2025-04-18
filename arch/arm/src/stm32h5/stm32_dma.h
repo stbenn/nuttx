@@ -30,24 +30,126 @@
 #include <nuttx/config.h>
 #include <sys/types.h>
 
+#include <stdint.h>
+
 #include "hardware/stm32_gpdma.h"
 
 /* These definitions provide the bit encoding of the 'status' parameter
  * passed to the DMA callback function (see dma_callback_t).
  */
 
- #define DMA_STATUS_FEIF           0                    /* Stream FIFO error (ignored) */
- #define DMA_STATUS_DMEIF          DMA_STREAM_DMEIF_BIT /* Stream direct mode error */
- #define DMA_STATUS_TEIF           DMA_STREAM_TEIF_BIT  /* Stream Transfer Error */
- #define DMA_STATUS_HTIF           DMA_STREAM_HTIF_BIT  /* Stream Half Transfer */
- #define DMA_STATUS_TCIF           DMA_STREAM_TCIF_BIT  /* Stream Transfer Complete */
+//  #define DMA_STATUS_FEIF           0                    /* Stream FIFO error (ignored) */
+//  #define DMA_STATUS_DMEIF          DMA_STREAM_DMEIF_BIT /* Stream direct mode error */
+//  #define DMA_STATUS_TEIF           DMA_STREAM_TEIF_BIT  /* Stream Transfer Error */
+//  #define DMA_STATUS_HTIF           DMA_STREAM_HTIF_BIT  /* Stream Half Transfer */
+//  #define DMA_STATUS_TCIF           DMA_STREAM_TCIF_BIT  /* Stream Transfer Complete */
  
- #define DMA_STATUS_ERROR          (DMA_STATUS_FEIF | DMA_STATUS_DMEIF | DMA_STATUS_TEIF)
- #define DMA_STATUS_SUCCESS        (DMA_STATUS_TCIF | DMA_STATUS_HTIF)
+//  #define DMA_STATUS_ERROR          (DMA_STATUS_FEIF | DMA_STATUS_DMEIF | DMA_STATUS_TEIF)
+//  #define DMA_STATUS_SUCCESS        (DMA_STATUS_TCIF | DMA_STATUS_HTIF)
+
+#ifdef CONFIG_DEBUG_DMA_INFO
+#  error "CONFIG_DEBUG_DMA_INFO not yet implemented."
+#  undef CONFIG_DEBUG_DMA_INFO
+#endif
+
+#ifdef CONFIG_STM32H5_DMACAPABLE
+#  error "CONFIG_STM32H5_DMACAPABLE not yet implemented."
+#  undef CONFIG_STM32H5_DMACAPABLE
+#endif
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* GPDMA Mode Flags: WARNING!! NOT YET IMPLEMENTED! */
+
+#define GPDMACFG_MODE_CIRC    (1 << 0)  /* Enable Circular mode */
+#define GPDMACFG_MODE_PFC     (1 << 1)  /* Enable Peripheral flow control */
+#define GPDMACFG_MODE_DB      (1 << 2)  /* Enable Double buffer mode */
+
+/* Channel priority level
+ * Refer to PRIO field in GPDMA_CxCR register description (RM0481)
+ */
+
+#define GPDMACFG_PRIO_LL      (0)   /* Low priority, low weight */
+#define GPDMACFG_PRIO_LM      (1)   /* Low priority, mid weight */
+#define GPMDACFG_PRIO_LH      (2)   /* Low priority, high weight */
+#define GPDMACFG_PRIO_H       (3)   /* High priority */
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+
+/* GPDMA transfer type enumeration */
+
+enum gpdma_ttype_e
+{
+  /* Peripheral-to-memory transfer */
+
+  GPDMA_TTYPE_P2M = 0,
+
+  /* Memory-to-peripheral transfer */
+
+  GPDMA_TTYPE_M2P,
+
+  /* Memory-to-memory transfer, linear addressing */
+
+  GPDMA_TTYPE_M2M_LINEAR,
+
+  /* 2D Addressing needed (NOT IMPLEMENTED YET)*/
+
+  GPDMA_TTYPE_2D
+};
+
+#ifdef CONFIG_DEBUG_DMA_INFO
+struct stm32_gpdma_reg_s
+{
+  uint32_t cxlbar;
+  uint32_t cxfcr;
+  uint32_t cxsr;
+  uint32_t cxcr;
+  uint32_t cxtr1;
+  uint32_t cxtr2;
+  uint32_t cxbr1;
+  uint32_t cxsar;
+  uint32_t cxdar;
+  uint32_t cxtr3;
+  uint32_t cxbr2;
+  uint32_t cxllr;
+};
+#endif
+
+struct stm32_gpdma_cfg_s 
+{
+  uint32_t src_addr;
+  uint32_t dest_addr;
+  
+  /* CxTR1 register for specified channel. */
+
+  uint32_t tr1;
+
+  /* request: Accepts GPDMA_CXTR2_SWREQ, GPDMA_CXTR2_DREQ, and
+   * GPDMA_CXTR2_REQSEL(r) for r given by GPDMA_REQ_x
+   * macros defined in hardware/stm32h56x_dmasigmap.h
+   */
+
+  uint16_t request;
+
+  /* Number of transfers, in units of the data width
+   * specified in tr1.
+   */
+
+  uint16_t ntransfers;
+
+  /* Priority level: refer to GPDMACFG_PRIO defines above */
+
+  uint8_t  priority;
+
+  /* mode flags, refer to GPDMACFG_MODE_X defines above. */
+
+  uint8_t  mode;
+};
+
 
 /* DMA_HANDLE Provides an opaque reference that can be used to represent a
  * DMA stream.
@@ -90,18 +192,15 @@ extern "C"
  * Public Function Prototypes
  ****************************************************************************/
 
-// TODO: Need to figure out what the ID should be. Should it be dmamap like
-// with the H7 or channel like the F7?
 /****************************************************************************
  * Name: stm32_dmachannel
  *
  * Description:
- *   Allocate a DMA channel.  This function gives the caller mutually
- *   exclusive access to the DMA channel specified by the 'dmamap' argument.
- *   It is common for DMA1 and DMA2
+ *   Allocate a DMA channel based on provided transfer type. The driver will
+ *   return the first available DMA channel compatible with the transfer type
  *
  * Input Parameters:
- *   TODO: Figure this out!! 
+ *   type - Type of DMA transfer required
  *
  * Returned Value:
  *   On success, this function returns a non-NULL, void* DMA channel handle.
@@ -115,13 +214,13 @@ extern "C"
  *
  ****************************************************************************/
 
-DMA_HANDLE stm32_dmachannel(unsigned int FOO);
+DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type);
 
 /****************************************************************************
  * Name: stm32_dmafree
  *
  * Description:
- *   Release a DMA channel and unmap DMAMUX if required.
+ *   Release a DMA channel.
  *
  *   NOTE:  The 'handle' used in this argument must NEVER be used again
  *   until stm32_dmachannel() is called again to re-gain access to the
@@ -150,7 +249,7 @@ void stm32_dmafree(DMA_HANDLE handle);
  *
  ****************************************************************************/
 
-void stm32_dmasetup(DMA_HANDLE handle, stm32_dmacfg_t *cfg);
+void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg);
 
 /****************************************************************************
  * Name: stm32_dmastart
@@ -219,8 +318,8 @@ size_t stm32_dmaresidual(DMA_HANDLE handle);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_STM32H7_DMACAPABLE
-bool stm32_dmacapable(DMA_HANDLE handle, stm32_dmacfg_t *cfg);
+#ifdef CONFIG_STM32H5_DMACAPABLE
+bool stm32_dmacapable(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg);
 #else
 #  define stm32_dmacapable(handle, cfg) (true)
 #endif
