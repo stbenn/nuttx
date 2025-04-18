@@ -491,7 +491,7 @@
 #define GPDMA_CXTR1_DBL_1(l)          ((l) - 1 << GPDMA_CXTR1_DBL_1_SHIFT)
 
 #define GPDMA_CXTR1_DBX               (1 << 26) /* Destination byte exchange */
-#define GPDMA_CXTR1_DHX               (1 << 17) /* Destination half-word exchange */
+#define GPDMA_CXTR1_DHX               (1 << 27) /* Destination half-word exchange */
 #define GPDMA_CXTR1_DAP               (1 << 30) /* Destination allocated port */
 #define GPDMA_CXTR1_DSEC              (1 << 31) /* Security attribute of transfer to the destination */
 
