@@ -32,20 +32,51 @@
 #include <debug.h>
 #include <errno.h>
 
+#include <nuttx/irq.h>
 #include <nuttx/arch.h>
 
 #include "arm_internal.h"
 #include "sched/sched.h"
 #include "stm32_dma.h"
 #include "hardware/stm32_gpdma.h"
+#include "hardware/stm32_memorymap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* For GPDMA peripheral, each channel has channel specific addresses that are
+ * at a base offset based on channel. Channel reg references will be based
+ * off this in this file.
+ */
+
+#define CH_BASE_OFFSET(ch)  (0x80*(ch)) 
+#define CH_CxLBAR_OFFSET     0x50
+#define CH_CxFCR_OFFSET      0x5C
+#define CH_CxSR_OFFSET       0x60
+#define CH_CxCR_OFFSET       0x64
+#define CH_CxTR1_OFFSET      0x90
+#define CH_CxTR2_OFFSET      0x94
+#define CH_CxBR1_OFFSET      0x98
+#define CH_CxSAR_OFFSET      0x9C
+#define CH_CxDAR_OFFSET      0xA0
+#define CH_CxTR3_OFFSET      0xA4
+#define CH_CxBR2_OFFSET      0xA8
+#define CH_CxLLR_OFFSET      0xCC
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+struct gpdma_ch_s
+{
+  uint8_t        irq;      /* DMA IRQ number */
+  uint8_t        channel;  /* DMA Channel number (0-7) */
+  uint32_t       base;     /* Channel base address */
+  sem_t          sem;      /* Used to wait for DMA channel to become available */
+  dma_callback_t callback; /* Callback invoked when DMA completes */
+  void          *arg;      /* Argument passed to callback function */
+};
 
 /****************************************************************************
  * Private Function Prototypes
@@ -55,6 +86,59 @@
  * Private Data
  ****************************************************************************/
 
+static struct gpdma_ch_s g_chan[] = 
+{
+  {
+    .channel = 0,
+    .irq = STM32_IRQ_GPDMA1_CH0,
+    .base = STM32_DMA1_BASE + CH_BASE_OFFSET(0),
+  },
+  {
+    .channel = 1,
+    .irq = STM32_IRQ_GPDMA1_CH1,
+  },
+  {
+    .channel = 2,
+    .irq = STM32_IRQ_GPDMA1_CH2,
+  },
+  {
+    .channel = 3,
+    .irq = STM32_IRQ_GPDMA1_CH3,
+  },
+  {
+    .channel = 4,
+    .irq = STM32_IRQ_GPDMA1_CH4,
+  },
+  {
+    .channel = 5,
+    .irq = STM32_IRQ_GPDMA1_CH5,
+  },
+  {
+    .channel = 0,
+    .irq = STM32_IRQ_GPDMA2_CH0,
+    .base = STM32_DMA2_BASE + CH_BASE_OFFSET(0),
+  },
+  {
+    .channel = 1,
+    .irq = STM32_IRQ_GPDMA2_CH1,
+  },
+  {
+    .channel = 2,
+    .irq = STM32_IRQ_GPDMA2_CH2,
+  },
+  {
+    .channel = 3,
+    .irq = STM32_IRQ_GPDMA2_CH3,
+  },
+  {
+    .channel = 4,
+    .irq = STM32_IRQ_GPDMA2_CH4,
+  },
+  {
+    .channel = 5,
+    .irq = STM32_IRQ_GPDMA2_CH5,
+  },
+};
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
