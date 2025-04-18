@@ -70,12 +70,11 @@
 
 struct gpdma_ch_s
 {
-  uint8_t        irq;      /* DMA IRQ number */
-  uint8_t        channel;  /* DMA Channel number (0-7) */
-  uint32_t       base;     /* Channel base address */
-  sem_t          sem;      /* Used to wait for DMA channel to become available */
-  dma_callback_t callback; /* Callback invoked when DMA completes */
-  void          *arg;      /* Argument passed to callback function */
+  uint8_t dma_instance; /* GPDMA1 or GPDMA2 */
+  uint8_t channel;
+  bool    free;         /* Is this channel free to use. */
+  uint16_t request;     /* The request number tied to in use channel. */
+
 };
 
 /****************************************************************************
@@ -89,55 +88,66 @@ struct gpdma_ch_s
 static struct gpdma_ch_s g_chan[] = 
 {
   {
+    .dma_instance = 1,
     .channel = 0,
-    .irq = STM32_IRQ_GPDMA1_CH0,
-    .base = STM32_DMA1_BASE + CH_BASE_OFFSET(0),
+    .free = true
   },
   {
+    .dma_instance = 1,
     .channel = 1,
-    .irq = STM32_IRQ_GPDMA1_CH1,
+    .free = true
   },
   {
+    .dma_instance = 1,
     .channel = 2,
-    .irq = STM32_IRQ_GPDMA1_CH2,
+    .free = true
   },
   {
+    .dma_instance = 1,
     .channel = 3,
-    .irq = STM32_IRQ_GPDMA1_CH3,
+    .free = true
   },
   {
+    .dma_instance = 1,
     .channel = 4,
-    .irq = STM32_IRQ_GPDMA1_CH4,
+    .free = true
   },
   {
+    .dma_instance = 1,
     .channel = 5,
-    .irq = STM32_IRQ_GPDMA1_CH5,
+    .free = true
   },
   {
+    .dma_instance = 2,
     .channel = 0,
-    .irq = STM32_IRQ_GPDMA2_CH0,
-    .base = STM32_DMA2_BASE + CH_BASE_OFFSET(0),
+    .free = true
   },
   {
+    .dma_instance = 2,
     .channel = 1,
-    .irq = STM32_IRQ_GPDMA2_CH1,
+    .free = true
   },
   {
+    .dma_instance = 2,
     .channel = 2,
-    .irq = STM32_IRQ_GPDMA2_CH2,
+    .free = true
   },
   {
+    .dma_instance = 2,
     .channel = 3,
-    .irq = STM32_IRQ_GPDMA2_CH3,
+    .free = true
   },
   {
+    .dma_instance = 2,
     .channel = 4,
-    .irq = STM32_IRQ_GPDMA2_CH4,
+    .free = true
   },
   {
+    .dma_instance = 2,
     .channel = 5,
-    .irq = STM32_IRQ_GPDMA2_CH5,
-  },
+    .free = true
+  }
+
 };
 /****************************************************************************
  * Private Functions
@@ -161,5 +171,76 @@ DMA_HANDLE stm32_dmachannel(uint16_t req)
 
      Linear M2M should be on channels with 32 byte FIFOs. GPDMA1/2 CH[4-5]
      Some peripherals (e.g. OCTOSPI) can also use these for burst transfers.
+
+     TODO: Add better channel allocation. 
   */
+
+  DMA_HANDLE handle = NULL;
+
+  DEBUGASSERT(req < 0xffff); /* Currently no support for M2M mode. */
+
+  // If it is P2M request, find first available 8 byte fifo channel
+  for (int i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
+    {
+      struct gpdma_ch_s *chan = &g_chan[i];
+
+      if (chan->free && chan->channel <= 3)
+        {
+          chan->free = false;
+          chan->request = req;
+          handle = (DMA_HANDLE)chan;
+          break;
+        }
+    }
+
+  return handle;
+}
+
+/****************************************************************************
+ * Name: stm32_dmafree
+ *
+ * Description:
+ *   Release a DMA channel and unmap DMAMUX if required.
+ *
+ *   NOTE:  The 'handle' used in this argument must NEVER be used again
+ *   until stm32_dmachannel() is called again to re-gain access to the
+ *   channel.
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *   - The caller holds the DMA channel.
+ *   - There is no DMA in progress
+ *
+ ****************************************************************************/
+
+void stm32_dmafree(DMA_HANDLE handle)
+{
+  struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
+
+  DEBUGASSERT(handle != NULL);
+
+  chan->request = 0;
+  chan->free = true;
+}
+
+/****************************************************************************
+ * Name: stm32_dmasetup
+ *
+ * Description:
+ *   Configure DMA before using
+ *
+ * Input Parameters:
+ *   TODO: Figure out what the input parameter needs to be!!! H7 and F7 have
+ *         very different implementations.
+ *
+ ****************************************************************************/
+
+void stm32_dmasetup(DMA_HANDLE handle, stm32_gpdmacfg_t *cfg)
+{
+  struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
+
+  DEBUGASSERT(handle != NULL);
+
 }

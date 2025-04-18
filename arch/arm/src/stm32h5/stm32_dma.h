@@ -97,6 +97,8 @@ struct stm32_gpdmacfg_s
 
 };
 
+typedef struct stm32_gpdmacfg_s stm32_gpdmacfg_t;
+
 /* DMA_HANDLE Provides an opaque reference that can be used to represent a
  * DMA stream.
  */
@@ -199,7 +201,7 @@ void stm32_dmafree(DMA_HANDLE handle);
  *
  ****************************************************************************/
 
-void stm32_dmasetup(DMA_HANDLE handle, stm32_dmacfg_t *cfg);
+void stm32_dmasetup(DMA_HANDLE handle, stm32_gpdmacfg_t *cfg);
 
 /****************************************************************************
  * Name: stm32_dmastart
