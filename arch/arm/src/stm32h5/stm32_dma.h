@@ -30,24 +30,72 @@
 #include <nuttx/config.h>
 #include <sys/types.h>
 
+#include <stdint.h>
+
 #include "hardware/stm32_gpdma.h"
 
 /* These definitions provide the bit encoding of the 'status' parameter
  * passed to the DMA callback function (see dma_callback_t).
  */
 
- #define DMA_STATUS_FEIF           0                    /* Stream FIFO error (ignored) */
- #define DMA_STATUS_DMEIF          DMA_STREAM_DMEIF_BIT /* Stream direct mode error */
- #define DMA_STATUS_TEIF           DMA_STREAM_TEIF_BIT  /* Stream Transfer Error */
- #define DMA_STATUS_HTIF           DMA_STREAM_HTIF_BIT  /* Stream Half Transfer */
- #define DMA_STATUS_TCIF           DMA_STREAM_TCIF_BIT  /* Stream Transfer Complete */
+//  #define DMA_STATUS_FEIF           0                    /* Stream FIFO error (ignored) */
+//  #define DMA_STATUS_DMEIF          DMA_STREAM_DMEIF_BIT /* Stream direct mode error */
+//  #define DMA_STATUS_TEIF           DMA_STREAM_TEIF_BIT  /* Stream Transfer Error */
+//  #define DMA_STATUS_HTIF           DMA_STREAM_HTIF_BIT  /* Stream Half Transfer */
+//  #define DMA_STATUS_TCIF           DMA_STREAM_TCIF_BIT  /* Stream Transfer Complete */
  
- #define DMA_STATUS_ERROR          (DMA_STATUS_FEIF | DMA_STATUS_DMEIF | DMA_STATUS_TEIF)
- #define DMA_STATUS_SUCCESS        (DMA_STATUS_TCIF | DMA_STATUS_HTIF)
+//  #define DMA_STATUS_ERROR          (DMA_STATUS_FEIF | DMA_STATUS_DMEIF | DMA_STATUS_TEIF)
+//  #define DMA_STATUS_SUCCESS        (DMA_STATUS_TCIF | DMA_STATUS_HTIF)
+
+/* GPDMA Configuration Flags: WARNING!! NOT YET IMPLEMENTED! */
+
+#define GPDMACFG_FLAG_CIRC    (1 << 0)  /* Enable Circular mode */
+#define GPDMACFG_FLAG_PFC     (1 << 1)  /* Enable Peripheral flow control */
+#define GPDMACFG_FLAG_DB      (1 << 2)  /* Enable Double buffer mode */
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+
+enum gpdma_dir_e
+{
+  GPDMA_DIR_P2M = 0,      /* Peripheral to Memory transfer */
+  GPDMA_DIR_M2P,          /* Memory to Peripheral transfer */
+  GPDMA_DIR_M2M           /* Memory to Memory transfer */
+};
+
+enum gpdma_datawidth_e
+{
+  GPDMA_DW_BYTE = 0,  /* Byte */
+  GPDMA_DW_HALF,      /* Half-word (2 Bytes) */
+  GPDMA_DW_WORD       /* Word (4 Bytes) */
+};
+
+/* GPDMA Configuration structure: abstracts away register implementation into
+ * fields to specify functionality. Driver handles translating this to
+ * registers.
+ */
+
+struct stm32_gpdmacfg_s
+{
+  uint32_t src_addr;          /* Source address */
+  bool     src_inc;           /* Source address increment */
+  uint32_t dest_addr;         /* Destination address */
+  bool     dest_inc;          /* Destination address increment */
+  enum gpdma_dir_e dir;       /* Transfer direction */
+  enum gpdma_datawidth_e dw;  /* Data width of src and dest */
+
+  /* Burst length applies to both source and dest. The driver currently
+   * only supports consistent data formats between src and dest.
+   */
+
+  uint8_t  burst_len;
+
+  /* Specialized config flags defined by GPDMACFG_FLAG_X (see above) */
+
+  uint16_t flags;
+
+};
 
 /* DMA_HANDLE Provides an opaque reference that can be used to represent a
  * DMA stream.
@@ -90,18 +138,19 @@ extern "C"
  * Public Function Prototypes
  ****************************************************************************/
 
-// TODO: Need to figure out what the ID should be. Should it be dmamap like
-// with the H7 or channel like the F7?
 /****************************************************************************
  * Name: stm32_dmachannel
  *
  * Description:
- *   Allocate a DMA channel.  This function gives the caller mutually
- *   exclusive access to the DMA channel specified by the 'dmamap' argument.
- *   It is common for DMA1 and DMA2
+ *   Allocate a DMA channel based on provided request signal. If no channel
+ *   is available, will wait until one becomes available.
+ *
+ *   For request signal definitions, see GPDMA_REQ_ definitions in
+ *   hardware/stm32h56x_dmasigmap.h (For H56x H57x chips)
  *
  * Input Parameters:
- *   TODO: Figure this out!! 
+ *   req - GPDMA request signal number or 0xFFFF for software triggered
+ *         memory-to-memory transfer.
  *
  * Returned Value:
  *   On success, this function returns a non-NULL, void* DMA channel handle.
@@ -115,7 +164,7 @@ extern "C"
  *
  ****************************************************************************/
 
-DMA_HANDLE stm32_dmachannel(unsigned int FOO);
+DMA_HANDLE stm32_dmachannel(uint16_t req);
 
 /****************************************************************************
  * Name: stm32_dmafree
