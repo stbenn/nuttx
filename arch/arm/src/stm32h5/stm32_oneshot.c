@@ -33,7 +33,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
-#include <types.h>
 
 #include <nuttx/irq.h>
 #include <nuttx/clock.h>
@@ -130,7 +129,7 @@ static inline int stm32_allocate_handler(struct stm32_oneshot_s *oneshot)
 
   /* Search for an unused handler */
 
-  for (i = 0; i < CONFIG_STM32_ONESHOT_MAXTIMERS; i++)
+  for (i = 0; i < CONFIG_STM32H5_ONESHOT_MAXTIMERS; i++)
     {
       /* Is this handler available? */
 
@@ -354,11 +353,6 @@ int stm32_oneshot_cancel(struct stm32_oneshot_s *oneshot,
                          struct timespec *ts)
 {
   irqstate_t flags;
-  uint64_t usec;
-  uint64_t sec;
-  uint64_t nsec;
-  uint32_t count;
-  uint32_t period;
 
   /* Was the timer running? */
 

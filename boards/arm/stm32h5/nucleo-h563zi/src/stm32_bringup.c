@@ -38,6 +38,10 @@
 
 #include <arch/board/board.h>
 
+#ifdef CONFIG_ONESHOT
+#  include <nuttx/timers/oneshot.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -62,6 +66,9 @@
 
 int stm32_bringup(void)
 {
+#ifdef CONFIG_ONESHOT
+  struct oneshot_lowerhalf_s *os = NULL;
+#endif
   int ret;
 
 #ifdef CONFIG_FS_PROCFS
@@ -109,6 +116,14 @@ int stm32_bringup(void)
       syslog(LOG_ERR, "ERROR: stm32_adc_setup failed: %d\n", ret);
     }
 #endif /* CONFIG_ADC*/
+
+#ifdef CONFIG_ONESHOT
+  os = oneshot_initialize(1, 10);
+  if (os)
+    {
+      ret = oneshot_register("/dev/oneshot", os);
+    }
+#endif
 
   UNUSED(ret);
   return OK;
