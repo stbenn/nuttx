@@ -34,6 +34,7 @@
 
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
+#include <nuttx/signal.h>
 
 #include "arm_internal.h"
 #include "sched/sched.h"
@@ -73,9 +74,7 @@ struct gpdma_ch_s
   uint8_t dma_instance; /* GPDMA1 or GPDMA2 */
   uint8_t channel;
   bool    free;         /* Is this channel free to use. */
-  uint16_t request;     /* The request number tied to in use channel. */
   uint32_t base;        /* Channel base address */
-
 };
 
 /****************************************************************************
@@ -90,6 +89,13 @@ static inline void gpdmach_modifyreg32(struct gpdma_ch_s *chan,
                                        uint32_t offset, uint32_t clrbits,
                                        uint32_t setbits);
 static void gpdma_ch_abort(struct gpdma_ch_s *chan);
+
+static int gpdma_setup(struct gpdma_ch_s *chan,
+                       struct stm32_gpdma_cfg_s *cfg);
+static int gpdma_setup_circular(struct gpdma_ch_s *chan,
+                                struct stm32_gpdma_cfg_s *cfg);
+static int gpdma_setup_doublebuff(struct gpdma_ch_s *chan,
+                                  struct stm32_gpdma_cfg_s *cfg);
 
 /****************************************************************************
  * Private Data
@@ -122,18 +128,6 @@ static struct gpdma_ch_s g_chan[] =
     .base = STM32_DMA1_BASE + CH_BASE_OFFSET(3)
   },
   {
-    .dma_instance = 1,
-    .channel = 4,
-    .free = true,
-    .base = STM32_DMA1_BASE + CH_BASE_OFFSET(4)
-  },
-  {
-    .dma_instance = 1,
-    .channel = 5,
-    .free = true,
-    .base = STM32_DMA1_BASE + CH_BASE_OFFSET(5)
-  },
-  {
     .dma_instance = 2,
     .channel = 0,
     .free = true,
@@ -156,20 +150,7 @@ static struct gpdma_ch_s g_chan[] =
     .channel = 3,
     .free = true,
     .base = STM32_DMA2_BASE + CH_BASE_OFFSET(3)
-  },
-  {
-    .dma_instance = 2,
-    .channel = 4,
-    .free = true,
-    .base = STM32_DMA2_BASE + CH_BASE_OFFSET(4)
-  },
-  {
-    .dma_instance = 2,
-    .channel = 5,
-    .free = true,
-    .base = STM32_DMA2_BASE + CH_BASE_OFFSET(5)
   }
-
 };
 
 /****************************************************************************
@@ -200,7 +181,7 @@ static inline void gpdmach_modifyreg32(struct gpdma_ch_s *chan,
  *
  * Description:
  *   For the given channel, suspend and abort any ongoing channel transfers.
- *   Returns after the abort has complete and taken effect. 
+ *   Returns after the abort has complete and taken effect.
  *
  ****************************************************************************/
 
@@ -219,7 +200,6 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
 
   while ((gpdmach_getreg(chan, CH_CxSR_OFFSET) & GPDMA_CXSR_SUSPF) == 0)
     {
-      up_udelay(1);
     }
 
   // 3. Reset chan by writing 1 to GPDMA_CxCR.RESET
@@ -231,8 +211,57 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
   while ((gpdmach_getreg(chan, CH_CxCR_OFFSET) &
           (GPDMA_CXCR_EN|GPDMA_CXCR_SUSP) == 0))
     {
-      up_udelay(1);
     }
+}
+
+/****************************************************************************
+ * Name: gpdma_setup
+ ****************************************************************************/
+
+static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
+{
+
+  return -ENOTSUP;
+}
+
+/****************************************************************************
+ * Name: gpdma_setup_circular
+ *
+ * Description:
+ *   Circular DMA requires linked list items (LLI) to setup properly. This
+ *   function handles LLI allocation and handling necessary to implement
+ *   circular DMA.
+ *
+ * NOTE:
+ *   No implementation yet!! This will be added in the future.
+ *
+ ****************************************************************************/
+
+static int gpdma_setup_circular(struct gpdma_ch_s *chan,
+                                struct stm32_gpdma_cfg_s *cfg)
+{
+  DEBUGASSERT(0);
+  return -ENOTSUP;
+}
+
+/****************************************************************************
+ * Name: gpdma_setup_doublebuff
+ *
+ * Description:
+ *   Double buffered DMA requires a linked list item (LLI) implementation.
+ *   This function handles DMA setup along with the necessary LLI allocation
+ *   for double buffer mode.
+ *
+ * NOTE:
+ *   No implementation yet!! This will be added in the future.
+ *
+ ****************************************************************************/
+
+static int gpdma_setup_doublebuff(struct gpdma_ch_s *chan,
+                                  struct stm32_gpdma_cfg_s *cfg)
+{
+  DEBUGASSERT(0);
+  return -ENOTSUP;
 }
 
 /****************************************************************************
@@ -244,37 +273,44 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
  *
  ****************************************************************************/
 
-DMA_HANDLE stm32_dmachannel(uint16_t req)
+DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
 {
   /* On the H5, peripherals can kind of be mapped to any number of different
-     channels.
-
-     P2M and M2P should be on channels with 8 byte FIFOs. GPDMA1/2 CH[0-3]
-
-     Linear M2M should be on channels with 32 byte FIFOs. GPDMA1/2 CH[4-5]
-     Some peripherals (e.g. OCTOSPI) can also use these for burst transfers.
-
-     TODO: Add better channel allocation. 
-  */
+   * channels.
+   *
+   * P2M and M2P should be on channels with 8 byte FIFOs. GPDMA1/2 CH[0-3]
+   *
+   * Linear M2M should be on channels with 32 byte FIFOs. GPDMA1/2 CH[4-5]
+   * Some peripherals (e.g. OCTOSPI) can also use these for burst transfers.
+   *
+   * 2D addressed transfers should be on GPDMA1/2 CH[6-7]
+   *
+   * Note: Currently, only P2M and M2P modes are supported and implemented.
+   */
 
   DMA_HANDLE handle = NULL;
 
-  DEBUGASSERT(req < 0xffff); /* Currently no support for M2M mode. */
+  /* Currently no support for M2M or 2D addressing modes.
+   * TODO: Remove when support is added!
+   */
 
-  // If it is P2M request, find first available 8 byte fifo channel
-  for (int i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
+  DEBUGASSERT(type != GPDMA_TTYPE_M2M_LINEAR);
+  DEBUGASSERT(type != GPDMA_TTYPE_2D);
+
+  if (type == GPDMA_TTYPE_M2P || type == GPDMA_TTYPE_P2M)
     {
-      struct gpdma_ch_s *chan = &g_chan[i];
-
-      if (chan->free && chan->channel <= 3)
+      for (int i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
         {
-          chan->free = false;
-          chan->request = req;
-          handle = (DMA_HANDLE)chan;
-          break;
+          struct gpdma_ch_s *chan = &g_chan[i];
+
+          if (chan->free && chan->channel <= 3)
+            {
+              chan->free = false;
+              handle = (DMA_HANDLE)chan;
+              break;
+            }
         }
     }
-
   return handle;
 }
 
@@ -303,7 +339,6 @@ void stm32_dmafree(DMA_HANDLE handle)
 
   DEBUGASSERT(handle != NULL);
 
-  chan->request = 0;
   chan->free = true;
 }
 
@@ -319,12 +354,16 @@ void stm32_dmafree(DMA_HANDLE handle)
  *
  ****************************************************************************/
 
-void stm32_dmasetup(DMA_HANDLE handle, stm32_gpdma_chcfg_t *cfg)
+void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
 {
   struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
   uint32_t timeout;
 
   DEBUGASSERT(handle != NULL);
+
+  /* No special modes are currently supported. */
+
+  DEBUGASSERT(cfg->mode == 0);
 
   /* Drivers using DMA should manage channel usage. If a DMA request is not
    * made on an error or an abort occurs, the driver should stop the DMA. If
@@ -344,8 +383,19 @@ void stm32_dmasetup(DMA_HANDLE handle, stm32_gpdma_chcfg_t *cfg)
 
   gpdmach_putreg(chan, CH_CxFCR_OFFSET, 0x7f << 8);
 
-  /* Set channel transfer priority */
-
-  // gpdmach_modifyreg32(chan, CH_CxCR_OFFSET, GPDMA_CXCR_PRIO_MASK,
-  //                    (cfg->priority & 0b11) << GPDMA_CXCR_PRIO_SHIFT);
+  if (cfg->mode & GPDMACFG_MODE_CIRC)
+    {
+      // Call circular mode setup
+      gpdma_setup_circular(chan, cfg);
+    }
+  else if (cfg->mode & GPDMACFG_MODE_DB)
+    {
+      // Call double buffer mode setup
+      gpdma_setup_doublebuff(chan, cfg);
+    }
+  else
+    {
+      // Call standard mode setup.
+      gpdma_setup(chan, cfg);
+    }
 }
