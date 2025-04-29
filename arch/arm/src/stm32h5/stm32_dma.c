@@ -71,10 +71,13 @@
 
 struct gpdma_ch_s
 {
-  uint8_t dma_instance; /* GPDMA1 or GPDMA2 */
-  uint8_t channel;
-  bool    free;         /* Is this channel free to use. */
-  uint32_t base;        /* Channel base address */
+  uint8_t            dma_instance; /* GPDMA1 or GPDMA2 */
+  uint8_t            channel;
+  enum gpdma_ttype_e type;
+  bool               free;         /* Is this channel free to use. */
+  uint32_t           base;         /* Channel base address */
+  dma_callback_t     callback;
+  void              *arg;
 };
 
 /****************************************************************************
@@ -94,8 +97,6 @@ static int gpdma_setup(struct gpdma_ch_s *chan,
                        struct stm32_gpdma_cfg_s *cfg);
 static int gpdma_setup_circular(struct gpdma_ch_s *chan,
                                 struct stm32_gpdma_cfg_s *cfg);
-static int gpdma_setup_doublebuff(struct gpdma_ch_s *chan,
-                                  struct stm32_gpdma_cfg_s *cfg);
 
 /****************************************************************************
  * Private Data
@@ -187,12 +188,12 @@ static inline void gpdmach_modifyreg32(struct gpdma_ch_s *chan,
 
 static void gpdma_ch_abort(struct gpdma_ch_s *chan)
 {
-  // 1. Software writes 1 to the GPDMA_CxCR.SUSP bit
   if ((gpdmach_getreg(chan, CH_CxCR_OFFSET) & GPDMA_CXCR_EN) == 0)
-    {
-      return;
-    }
+  {
+    return;
+  }
   
+  // 1. Software writes 1 to the GPDMA_CxCR.SUSP bit
   gpdmach_putreg(chan, CH_CxCR_OFFSET, GPDMA_CXCR_SUSP);
 
   // 2. Polls suspend flag GPDMA_CxSR.SUSPF until SUSPF = 1, or waits for an
@@ -216,12 +217,48 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
 
 /****************************************************************************
  * Name: gpdma_setup
+ *
+ * Assumptions:
+ *   - EN bit not set. Channel must have been aborted before this is called.
+ *
  ****************************************************************************/
 
 static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
 {
+  uint32_t reg;
 
-  return -ENOTSUP;
+  /* Make sure not to use linked list mode. */
+  // Do I also need to clear CxLBAR?
+  gpdmach_modifyreg32(chan, CH_CxLLR_OFFSET, ~0, 0);
+
+  /* Set source and destination addresses. */
+
+  gpdmach_putreg(chan, CH_CxSAR_OFFSET, cfg->src_addr);
+  gpdmach_putreg(chan, CH_CxDAR_OFFSET, cfg->dest_addr);
+
+  /* Set the channel priority according to configuration. */
+
+  gpdmach_modifyreg32(chan, CH_CxCR_OFFSET, GPDMA_CXCR_PRIO_MASK,
+                      cfg->priority << GPDMA_CXCR_PRIO_SHIFT);
+
+  /* Set channels TR1 register based on configuration provided. */
+
+  gpdmach_putreg(chan, CH_CxTR1_OFFSET, cfg->tr1);
+
+  /* Assemble the required config for TR2 */
+
+  reg = (uint32_t)cfg->request &
+        (GPDMA_CXTR2_REQSEL_MASK|GPDMA_CXTR2_DREQ|GPDMA_CXTR2_SWREQ);
+  gpdmach_putreg(chan, CH_CxTR2_OFFSET, reg);
+
+  /* Calculate block number of data bytes to transfer, update BR1 */
+
+  reg = cfg->ntransfers *
+      ((cfg->tr1 & GPDMA_CXTR1_SDW_LOG2_MASK) >> GPDMA_CXTR1_SDW_LOG2_SHIFT);
+
+  gpdmach_putreg(chan, CH_CxBR1_OFFSET, reg);
+
+  return 0;
 }
 
 /****************************************************************************
@@ -239,26 +276,6 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
 
 static int gpdma_setup_circular(struct gpdma_ch_s *chan,
                                 struct stm32_gpdma_cfg_s *cfg)
-{
-  DEBUGASSERT(0);
-  return -ENOTSUP;
-}
-
-/****************************************************************************
- * Name: gpdma_setup_doublebuff
- *
- * Description:
- *   Double buffered DMA requires a linked list item (LLI) implementation.
- *   This function handles DMA setup along with the necessary LLI allocation
- *   for double buffer mode.
- *
- * NOTE:
- *   No implementation yet!! This will be added in the future.
- *
- ****************************************************************************/
-
-static int gpdma_setup_doublebuff(struct gpdma_ch_s *chan,
-                                  struct stm32_gpdma_cfg_s *cfg)
 {
   DEBUGASSERT(0);
   return -ENOTSUP;
@@ -306,6 +323,7 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
           if (chan->free && chan->channel <= 3)
             {
               chan->free = false;
+              chan->type = type;
               handle = (DMA_HANDLE)chan;
               break;
             }
@@ -388,14 +406,53 @@ void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
       // Call circular mode setup
       gpdma_setup_circular(chan, cfg);
     }
-  else if (cfg->mode & GPDMACFG_MODE_DB)
-    {
-      // Call double buffer mode setup
-      gpdma_setup_doublebuff(chan, cfg);
-    }
   else
     {
       // Call standard mode setup.
       gpdma_setup(chan, cfg);
     }
+}
+
+/****************************************************************************
+ * Name: stm32_dmastart
+ *
+ * Description:
+ *   Start the DMA transfer.
+ *
+ * Assumptions:
+ *   - DMA handle allocated by stm32_dmachannel()
+ *   - No DMA in progress
+ *
+ ****************************************************************************/
+
+void stm32_dmastart(DMA_HANDLE handle, dma_callback_t callback, void *arg,
+                    bool half)
+{
+  struct gpdma_ch_s *chan = (struct gpdma_chan_s *)handle;
+
+  DEBUGASSERT(handle != NULL);
+
+  /* Save the callback info. This will be invoked when the DMA completes */
+
+  chan->callback = callback;
+  chan->arg = arg;
+}
+
+/****************************************************************************
+ * Name: stm32_dmastop
+ *
+ * Description:
+ *   Cancel the DMA. After stm32_dmastop() is called, the DMA channel is
+ *   reset and stm32_dmasetup() must be called before stm32_dmastart() can be
+ *   called again.
+ *
+ * Assumptions:
+ *   - DMA handle allocated by stm32_dmachannel()
+ *
+ ****************************************************************************/
+
+void stm32_dmastop(DMA_HANDLE handle)
+{
+  struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
+  gpdma_ch_abort(chan);
 }
