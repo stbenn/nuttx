@@ -198,7 +198,10 @@ static int  adc_timinit(struct stm32_dev_s *priv);
 #endif
 
 #ifdef ADC_HAVE_DMA
-static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t isr, void *arg);
+static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status,
+                                void *arg);
+static void adc_dmacfg_oneshot(struct stm32_dev_s *priv,
+                               struct stm32_gpdma_cfg_s *cfg);
 #endif
 
 /* ADC Interrupt Handler */
@@ -786,6 +789,100 @@ static void adc_reset(struct adc_dev_s *dev)
 }
 
 /****************************************************************************
+ * Name: adc_dmaconvcallback
+ *
+ * Description:
+ *   Callback for DMA.  Called from the DMA transfer complete interrupt after
+ *   all channels have been converted and transferred with DMA.
+ *
+ * Input Parameters:
+ *
+ *   handle - handle to DMA
+ *   status -
+ *   arg - adc device
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef ADC_HAVE_DMA
+static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status, void *arg)
+{
+  struct adc_dev_s   *dev  = (struct adc_dev_s *)arg;
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
+  int i;
+
+  /* Verify that the upper-half driver has bound its callback functions */
+
+  if (priv->cb != NULL)
+    {
+      DEBUGASSERT(priv->cb->au_receive != NULL);
+
+      for (i = 0; i < priv->nchannels; i++)
+        {
+          priv->cb->au_receive(dev, priv->chanlist[priv->current],
+                               priv->dmabuffer[priv->current]);
+          priv->current++;
+          if (priv->current >= priv->nchannels)
+            {
+              /* Restart the conversion sequence from the beginning */
+
+              priv->current = 0;
+            }
+        }
+    }
+
+  /* Restart DMA for the next conversion series */
+
+  adc_modifyreg(priv, STM32_ADC_CFGR_OFFSET, ADC_CFGR_DMAEN, 0);
+  adc_modifyreg(priv, STM32_ADC_CFGR_OFFSET, 0, ADC_CFGR_DMAEN);
+}
+#endif
+
+/****************************************************************************
+ * Name: adc_dmacfg_oneshot
+ *
+ * Description:
+ *   Generate the required DMA configuration structure for oneshot mode based
+ *   on the ADC configuration.
+ *
+ * Input Parameters:
+ *   priv - ADC instance structure
+ *   cfg  - DMA configuration structure
+ *
+ * Returned Value:
+ *   None
+ ****************************************************************************/
+#ifdef ADC_HAVE_DMA
+static void adc_dmacfg_oneshot(struct stm32_dev_s *priv,
+                               struct stm32_gpdma_cfg_s *cfg)
+{
+  cfg->src_addr = priv->base + STM32_ADC_DR_OFFSET;
+  cfg->dest_addr = (uintptr_t)priv->dmabuffer;
+
+  cfg->request = (priv->base == STM32_ADC1_BASE) ? GPDMA_REQ_ADC1 :
+                                                   GPDMA_REQ_ADC2;
+
+  cfg->priority = GPMDACFG_PRIO_LH;
+  cfg->ntransfers = priv->cchannels;
+  cfg->mode = 0;
+
+  /* TR1 configuration:
+   *   - No data manipulation
+   *   - Ports: source = 0, dest = 1
+   *   - Data size: half word
+   *   - Burst length: 0
+   *   - Destination address increment
+   *   - Source address static
+   */
+
+  cfg->tr1 = (GPDMA_CXTR1_DAP | GPDMA_CXTR1_DINC | GPDMA_CXTR1_DDW_LOG2_HW |
+              GPDMA_CXTR1_SDW_LOG2_HW);
+}
+#endif
+
+/****************************************************************************
  * Name: adc_setup
  *
  * Description:
@@ -804,7 +901,7 @@ static int adc_setup(struct adc_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
 #ifdef ADC_HAVE_DMA
-  struct stm32_gpdma_cfg_s *dmacfg;
+  struct stm32_gpdma_cfg_s dmacfg;
 #endif
   int ret;
   irqstate_t flags;
@@ -922,15 +1019,14 @@ static int adc_setup(struct adc_dev_s *dev)
 
       priv->dma = stm32_dmachannel(GPDMA_TTYPE_P2M);
 
-      // stm32_dmasetup(priv->dma,
-      //                  priv->base + STM32_ADC_DR_OFFSET,
-      //                  (uint32_t)priv->dmabuffer,
-      //                  priv->nchannels,
-      //                  ADC_DMA_CONTROL_WORD);
+      /* Setup DMA in oneshot mode */
 
-      // stm32_dmastart(priv->dma, adc_dmaconvcallback, dev, false);
+      adc_dmacfg_oneshot(priv, &dmacfg);
+
+      stm32_dmasetup(priv->dma, &dmacfg);
+
+      stm32_dmastart(priv->dma, adc_dmaconvcallback, dev, false);
     }
-
 #endif
 
   /* Set ADEN to wake up the ADC from Power Down. */
