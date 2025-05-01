@@ -286,6 +286,24 @@ static int gpdma_setup_circular(struct gpdma_ch_s *chan,
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: arm_dma_initialize
+ *
+ * Description:
+ *   Initialize the DMA subsystem
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void weak_function arm_dma_initialize(void)
+{
+  struct gpdma_chan_s *chan;
+# warning "arm_dma_initialize not implemented!!"
+
+}
+
  /****************************************************************************
  * Name: stm32_dmachannel
  *
@@ -307,6 +325,7 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
    */
 
   DMA_HANDLE handle = NULL;
+  irqstate_t flags;
 
   /* Currently no support for M2M or 2D addressing modes.
    * TODO: Remove when support is added!
@@ -315,6 +334,7 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
   DEBUGASSERT(type != GPDMA_TTYPE_M2M_LINEAR);
   DEBUGASSERT(type != GPDMA_TTYPE_2D);
 
+  flags = enter_critical_section();
   if (type == GPDMA_TTYPE_M2P || type == GPDMA_TTYPE_P2M)
     {
       for (int i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
@@ -329,6 +349,15 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
               break;
             }
         }
+    }
+  leave_critical_section(flags);
+
+  if (handle == NULL)
+    {
+      /* Failed to allocate channel. */
+
+      dmainfo("No available DMA chan for transfer type=%" PRIu8 "\n",
+              type);
     }
   return handle;
 }
@@ -500,3 +529,50 @@ void stm32_dmastop(DMA_HANDLE handle)
   struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
   gpdma_ch_abort(chan);
 }
+
+/****************************************************************************
+ * Name: stm32_dmacapable
+ *
+ * Description:
+ *   Check if the DMA controller can transfer data to/from given memory
+ *   address. This depends on the internal connections in the ARM bus matrix
+ *   of the processor. Note that this only applies to memory addresses, it
+ *   will return false for any peripheral address.
+ *
+ * Input Parameters:
+ *   cfg - DMA transfer configuration
+ *
+ * Returned Value:
+ *   True, if transfer is possible.
+ *
+ * NOTE: No implementation yet.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32H5_DMACAPABLE
+bool stm32_dmacapable(DMA_HANDLE handle, stm32_gpdma_cfg_s *cfg)
+{
+# warning "stm32_dma_capable not implemented yet"
+  return false;
+}
+#endif
+
+/****************************************************************************
+ * Name: stm32_dmadump
+ *
+ * Description:
+ *   Dump previously sampled DMA register contents
+ *
+ * Assumptions:
+ *   - DMA handle allocated by stm32_dmachannel()
+ *
+ * NOTE: No implementation yet.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_DEBUG_DMA_INFO
+static void stm32_dmadump(DMA_HANDLE handle, const char *msg)
+{
+#  warning "stm32_dma_dump not implemented yet!"
+}
+#endif
