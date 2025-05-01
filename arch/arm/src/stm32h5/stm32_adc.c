@@ -49,6 +49,7 @@
 #include "stm32_adc.h"
 #include "stm32_tim.h"
 #include "stm32_rcc.h"
+#include "stm32_dma.h"
 
 /* ADC "upper half" support must be enabled */
 
@@ -117,7 +118,9 @@ struct stm32_dev_s
   uint8_t intf;         /* ADC interface number */
   uint8_t current;      /* Current ADC channel being converted */
 #ifdef ADC_HAVE_DMA
+  // TODO: Probably don't need this for H5 implementation.
   uint8_t dmachan;      /* DMA channel needed by this ADC */
+
   bool    hasdma;       /* True: This ADC supports DMA */
 #endif
 #ifdef ADC_HAVE_TIMER
@@ -194,6 +197,10 @@ static void adc_timstart(struct stm32_dev_s *priv, bool enable);
 static int  adc_timinit(struct stm32_dev_s *priv);
 #endif
 
+#ifdef ADC_HAVE_DMA
+static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t isr, void *arg);
+#endif
+
 /* ADC Interrupt Handler */
 
 static int adc_interrupt(struct adc_dev_s *dev, uint32_t regval);
@@ -245,6 +252,9 @@ static struct stm32_dev_s g_adcpriv1 =
   .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
   .freq        = CONFIG_STM32H5_ADC1_SAMPLE_FREQUENCY,
 #endif
+#ifdef ADC1_HAVE_DMA
+  .hasdma      = true,
+#endif
 };
 
 static struct adc_dev_s g_adcdev1 =
@@ -273,6 +283,9 @@ static struct stm32_dev_s g_adcpriv2 =
   .extsel      = ADC2_EXTSEL_VALUE,
   .pclck       = ADC2_TIMER_PCLK_FREQUENCY,
   .freq        = CONFIG_STM32H5_ADC2_SAMPLE_FREQUENCY,
+#endif
+#ifdef ADC2_HAVE_DMA
+  .hasdma      = true,
 #endif
 };
 
@@ -790,6 +803,9 @@ static void adc_reset(struct adc_dev_s *dev)
 static int adc_setup(struct adc_dev_s *dev)
 {
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
+#ifdef ADC_HAVE_DMA
+  struct stm32_gpdma_cfg_s *dmacfg;
+#endif
   int ret;
   irqstate_t flags;
   uint32_t clrbits;
@@ -837,9 +853,15 @@ static int adc_setup(struct adc_dev_s *dev)
 #ifdef ADC_HAVE_DMA
   if (priv->hasdma)
     {
-      /* Enable One shot DMA */
+      /* Enable One shot DMA.
+       * WARNING: This doesn't work in dual-ADC modes. [RM0481] ADC_CFGR
+       * register description (pg. 1122) - "In dual-ADC modes, this bit is
+       * not relevant and replaced by control bit DMACFG of the ADC_CCR
+       * register"
+       */
 
       setbits |= ADC_CFGR_DMAEN;
+      clrbits |= ADC_CFGR_DMACFG;
     }
 #endif
 
@@ -898,15 +920,15 @@ static int adc_setup(struct adc_dev_s *dev)
           stm32_dmafree(priv->dma);
         }
 
-      priv->dma = stm32_dmachannel(priv->dmachan);
+      priv->dma = stm32_dmachannel(GPDMA_TTYPE_P2M);
 
-      stm32_dmasetup(priv->dma,
-                       priv->base + STM32_ADC_DR_OFFSET,
-                       (uint32_t)priv->dmabuffer,
-                       priv->nchannels,
-                       ADC_DMA_CONTROL_WORD);
+      // stm32_dmasetup(priv->dma,
+      //                  priv->base + STM32_ADC_DR_OFFSET,
+      //                  (uint32_t)priv->dmabuffer,
+      //                  priv->nchannels,
+      //                  ADC_DMA_CONTROL_WORD);
 
-      stm32_dmastart(priv->dma, adc_dmaconvcallback, dev, false);
+      // stm32_dmastart(priv->dma, adc_dmaconvcallback, dev, false);
     }
 
 #endif
