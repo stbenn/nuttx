@@ -270,7 +270,7 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
   // 4. Wait for GPDMA_CxCR.EN and GPDMA_CxCR.SUSP bits to be reset
 
   while ((gpdmach_getreg(chan, CH_CxCR_OFFSET) &
-          (GPDMA_CXCR_EN|GPDMA_CXCR_SUSP) == 0))
+          (GPDMA_CXCR_EN|GPDMA_CXCR_SUSP)) == 0)
     {
     }
 }
@@ -285,8 +285,6 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
 
 static void gpdma_ch_disable(struct gpdma_ch_s *chan)
 {
-  uint32_t bitmask;
-
   DEBUGASSERT(chan != NULL);
 
   gpdma_ch_abort(chan);
@@ -505,7 +503,6 @@ void stm32_dmafree(DMA_HANDLE handle)
 void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
 {
   struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
-  uint32_t timeout;
 
   DEBUGASSERT(handle != NULL);
 
