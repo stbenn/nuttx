@@ -881,6 +881,29 @@ config ARCH_BOARD_STM32H5_CUSTOM_CLOCKCONFIG
 	---help---
 		Enables special, board-specific STM32 clock configuration.
 
+menu "ADC Configuration"
+	depends on STM32H5_ADC
+
+config STM32H5_ADC1_DMA
+	bool "ADC1 DMA Enable"
+	depends on STM32H5_ADC1 && STM32H5_DMA
+	default n
+	---help---
+		If DMA is selected, then the ADC may be configured to support DMA
+		transfer, which is necessary if multiple channels are read or if
+		very high trigger frequencies are used.
+
+config STM32H5_ADC2_DMA
+	bool "ADC2 DMA Enable"
+	depends on STM32H5_ADC2 && STM32H5_DMA
+	default n
+	---help---
+		If DMA is selected, then the ADC may be configured to support DMA
+		transfer, which is necessary if multiple channels are read or if
+		very high trigger frequencies are used.
+
+endmenu # ADC Configuration
+
 menu "SPI Configuration"
 	depends on STM32H5_SPI
 

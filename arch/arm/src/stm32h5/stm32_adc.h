@@ -82,6 +82,13 @@
 #  undef CONFIG_STM32H5_TIM15_ADC2
 #endif
 
+/* DMA support */
+
+#undef ADC_HAVE_DMA
+#if defined(CONFIG_STM32H5_ADC1_DMA) || defined(CONFIG_STM32H5_ADC2_DMA)
+#  define ADC_HAVE_DMA 1
+#endif
+
 /* Timer configuration:  If a timer trigger is specified, then get
  * information about the timer.
  */
