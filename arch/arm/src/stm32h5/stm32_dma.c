@@ -78,6 +78,7 @@ struct gpdma_ch_s
   uint32_t           base;         /* Channel base address */
   dma_callback_t     callback;
   void              *arg;
+  struct stm32_gpdma_cfg_s *cfg;   /* Configuration passed at channel setup */
 };
 
 /****************************************************************************
@@ -379,6 +380,10 @@ void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
 
   DEBUGASSERT(handle != NULL);
 
+  /* Store the configuration so it can be referenced later by start. */
+
+  chan->cfg = cfg;
+
   /* No special modes are currently supported. */
 
   DEBUGASSERT(cfg->mode == 0);
@@ -429,6 +434,7 @@ void stm32_dmastart(DMA_HANDLE handle, dma_callback_t callback, void *arg,
                     bool half)
 {
   struct gpdma_ch_s *chan = (struct gpdma_chan_s *)handle;
+  uint32_t cr;
 
   DEBUGASSERT(handle != NULL);
 
@@ -436,6 +442,44 @@ void stm32_dmastart(DMA_HANDLE handle, dma_callback_t callback, void *arg,
 
   chan->callback = callback;
   chan->arg = arg;
+
+  /* Activate channel by setting ENABLE bin in the GPDMA_CXCR register.
+   * As soon as the channel is enabled, it can serve any DMA request from the
+   * peripheral connected to the stream.
+   */
+
+  cr = gpdmach_getreg(chan, CH_CxCR_OFFSET);
+  cr |= GPDMA_CXCR_EN;
+
+  /* In normal mode, interrupt at either half or full completion. In circular
+   * mode, always interrupt on wrap and optionally interrupt at halfway.
+   */
+
+  if (chan->cfg->mode & (GPDMACFG_MODE_CIRC))
+    {
+      /* In circular mode, when transfer completes it resets and starts
+       * again. The transfer-complete interrupt is thus always enabled, and
+       * the half-complete interrupt can be used to determine when the buffer
+       * is half-full.
+       */
+
+      cr |= (half ? GPDMA_CXCR_HTIE : 0) | GPDMA_CXCR_TCIE | GPDMA_CXCR_DTEIE;
+    }
+  else
+    {
+      /* Once half of the bytes are transferred, the half-transfer flag
+       * (HTIF) is set and an interrupt is generated if the
+       * Half-Transfer Interrupt Enable bit (HTIE) is set. At the end of the
+       * transfer, the Transfer Complete Flag (TCIF) is set and an interrupt
+       * is generated if the Transfer Complete Interrupt Enable bit (TCIE) is
+       * set.
+       */
+
+      cr |= (half ? (GPDMA_CXCR_HTIE | GPDMA_CXCR_DTEIE) :
+                    (GPDMA_CXCR_TCIE | GPDMA_CXCR_DTEIE));
+    }
+
+  gpdmach_putreg(chan, CH_CxCR_OFFSET, cr);
 }
 
 /****************************************************************************
