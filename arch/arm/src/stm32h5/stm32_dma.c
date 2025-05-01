@@ -79,7 +79,7 @@ struct gpdma_ch_s
   uint32_t           base;         /* Channel base address */
   dma_callback_t     callback;
   void              *arg;
-  struct stm32_gpdma_cfg_s *cfg;   /* Configuration passed at channel setup */
+  struct stm32_gpdma_cfg_s cfg;   /* Configuration passed at channel setup */
 };
 
 /****************************************************************************
@@ -508,7 +508,7 @@ void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
 
   /* Store the configuration so it can be referenced later by start. */
 
-  chan->cfg = cfg;
+  chan->cfg = *cfg;
 
   /* No special modes are currently supported. */
 
@@ -582,7 +582,7 @@ void stm32_dmastart(DMA_HANDLE handle, dma_callback_t callback, void *arg,
    * mode, always interrupt on wrap and optionally interrupt at halfway.
    */
 
-  if (chan->cfg->mode & (GPDMACFG_MODE_CIRC))
+  if (chan->cfg.mode & (GPDMACFG_MODE_CIRC))
     {
       /* In circular mode, when transfer completes it resets and starts
        * again. The transfer-complete interrupt is thus always enabled, and
