@@ -199,7 +199,41 @@ static inline void gpdmach_modifyreg32(struct gpdma_ch_s *chan,
 
 static int gpdma_dmainterrupt(int irq, void *context, void *arg)
 {
-# warning "gpdma_dmainterrupt() not implemented yet"
+  struct gpdma_ch_s *chan = NULL;
+  uint32_t status;
+
+  /* Get the channel that generated the interrupt */
+
+  if (irq >= STM32_IRQ_GPDMA1_CH0 && irq <= STM32_IRQ_GPDMA1_CH7)
+    {
+      chan = &g_chan[irq - STM32_IRQ_GPDMA1_CH0];
+    }
+  else if (irq >= STM32_IRQ_GPDMA2_CH0 && irq <= STM32_IRQ_GPDMA2_CH7)
+    {
+      chan = &g_chan[irq - STM32_IRQ_GPDMA2_CH0 + 4];
+    }
+  else
+    {
+      DEBUGPANIC();
+    }
+
+  /* Get the interrupt status for this channel */
+
+  status = (gpdmach_getreg(chan, CH_CxSR_OFFSET) >> 8) & 0x7f;
+
+  /* Clear the fetched channel interrupts by setting bits in the flag 
+   * clear register
+   */
+
+  gpdmach_putreg(chan, CH_CxFCR_OFFSET, ~0);
+
+  /* Invoke the callback */
+
+  if (chan->callback)
+    {
+      chan->callback(chan, (uint8_t)status, chan->arg);
+    }
+
   return 0;
 }
 
@@ -642,5 +676,26 @@ bool stm32_dmacapable(DMA_HANDLE handle, stm32_gpdma_cfg_s *cfg)
 static void stm32_dmadump(DMA_HANDLE handle, const char *msg)
 {
 #  warning "stm32_dma_dump not implemented yet!"
+}
+#endif
+
+/****************************************************************************
+ * Name: stm32_dmasample
+ *
+ * Description:
+ *   Sample DMA register contents
+ *
+ * Input Parameters:
+ *   TODO: Figure these out!! Not sure if I need the struct like F7 or not?
+ *
+ * Assumptions:
+ *   - DMA handle allocated by stm32_dmachannel()
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_DEBUG_DMA_INFO
+void stm32_dmasample(DMA_HANDLE handle, struct stm32_dmaregs_s *regs)
+{
+#  warning "stm32_dmasample() not implemented yet!"
 }
 #endif
