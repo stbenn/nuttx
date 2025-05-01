@@ -71,11 +71,6 @@
 #define ADC_MAX_CHANNELS_NODMA 20
 
 #ifdef ADC_HAVE_DMA
-#  error "STM32H5 ADC does not have DMA support."
-#  undef ADC_HAVE_DMA
-#endif
-
-#ifdef ADC_HAVE_DMA
 #  define ADC_MAX_SAMPLES ADC_MAX_CHANNELS_DMA
 #else
 #  define ADC_MAX_SAMPLES ADC_MAX_CHANNELS_NODMA
@@ -255,7 +250,7 @@ static struct stm32_dev_s g_adcpriv1 =
   .pclck       = ADC1_TIMER_PCLK_FREQUENCY,
   .freq        = CONFIG_STM32H5_ADC1_SAMPLE_FREQUENCY,
 #endif
-#ifdef ADC1_HAVE_DMA
+#ifdef CONFIG_STM32H5_ADC1_DMA
   .hasdma      = true,
 #endif
 };
