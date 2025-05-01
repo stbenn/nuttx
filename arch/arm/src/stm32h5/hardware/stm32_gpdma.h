@@ -461,6 +461,8 @@
 #define GPDMA_CXCR_PRIO_SHIFT         (22)      /* Bits 22-23: Priority level of ch x GPDMA transfer */
 #define GPDMA_CXCR_PRIO_MASK          (0b11 << GPDMA_CXCR_PRIO_SHIFT)
 
+#define GPDMA_CXCR_ALLINTS            (GPDMA_CXCR_TOIE|GPDMA_CXCR_SUSPEI|GPDMA_CXCR_USEIE|GPDMA_CXCR_ULEIE|GPDMA_CXCR_DTEIE|GPDMA_CXCR_HTIE|GPDMA_CXCR_TCIE)
+
 /* Channel x transfer register 1 */
 
 #define GPDMA_CXTR1_SDW_LOG2_SHIFT    (0)

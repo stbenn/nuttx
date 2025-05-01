@@ -73,6 +73,7 @@ struct gpdma_ch_s
 {
   uint8_t            dma_instance; /* GPDMA1 or GPDMA2 */
   uint8_t            channel;
+  uint8_t            irq;
   enum gpdma_ttype_e type;
   bool               free;         /* Is this channel free to use. */
   uint32_t           base;         /* Channel base address */
@@ -93,11 +94,13 @@ static inline void gpdmach_modifyreg32(struct gpdma_ch_s *chan,
                                        uint32_t offset, uint32_t clrbits,
                                        uint32_t setbits);
 static void gpdma_ch_abort(struct gpdma_ch_s *chan);
+static void gpdma_ch_disable(struct gpdma_ch_s *chan);
 
 static int gpdma_setup(struct gpdma_ch_s *chan,
                        struct stm32_gpdma_cfg_s *cfg);
 static int gpdma_setup_circular(struct gpdma_ch_s *chan,
                                 struct stm32_gpdma_cfg_s *cfg);
+static int gpdma_dmainterrupt(int irq, void *context, void *arg);
 
 /****************************************************************************
  * Private Data
@@ -108,48 +111,56 @@ static struct gpdma_ch_s g_chan[] =
   {
     .dma_instance = 1,
     .channel = 0,
+    .irq = STM32_IRQ_GPDMA1_CH0,
     .free = true,
     .base = STM32_DMA1_BASE + CH_BASE_OFFSET(0)
   },
   {
     .dma_instance = 1,
     .channel = 1,
+    .irq = STM32_IRQ_GPDMA1_CH1,
     .free = true,
     .base = STM32_DMA1_BASE + CH_BASE_OFFSET(1)
   },
   {
     .dma_instance = 1,
     .channel = 2,
+    .irq = STM32_IRQ_GPDMA1_CH2,
     .free = true,
     .base = STM32_DMA1_BASE + CH_BASE_OFFSET(2)
   },
   {
     .dma_instance = 1,
     .channel = 3,
+    .irq = STM32_IRQ_GPDMA1_CH3,
     .free = true,
     .base = STM32_DMA1_BASE + CH_BASE_OFFSET(3)
   },
   {
     .dma_instance = 2,
     .channel = 0,
+    .irq = STM32_IRQ_GPDMA2_CH0,
     .free = true,
     .base = STM32_DMA2_BASE + CH_BASE_OFFSET(0)
   },
   {
     .dma_instance = 2,
     .channel = 1,
+    .irq = STM32_IRQ_GPDMA2_CH1,
     .free = true,
     .base = STM32_DMA2_BASE + CH_BASE_OFFSET(1)
   },
   {
     .dma_instance = 2,
     .channel = 2,
+    .irq = STM32_IRQ_GPDMA2_CH2,
     .free = true,
     .base = STM32_DMA2_BASE + CH_BASE_OFFSET(2)
   },
   {
     .dma_instance = 2,
     .channel = 3,
+    .irq = STM32_IRQ_GPDMA2_CH3,
     .free = true,
     .base = STM32_DMA2_BASE + CH_BASE_OFFSET(3)
   }
@@ -176,6 +187,20 @@ static inline void gpdmach_modifyreg32(struct gpdma_ch_s *chan,
                                        uint32_t setbits)
 {
   modifyreg32(chan->base + offset, clrbits, setbits);
+}
+
+/****************************************************************************
+ * Name: gpdma_ch_abort
+ *
+ * Description:
+ *   DMA interrupt handler.
+ *
+ ****************************************************************************/
+
+static int gpdma_dmainterrupt(int irq, void *context, void *arg)
+{
+# warning "gpdma_dmainterrupt() not implemented yet"
+  return 0;
 }
 
 /****************************************************************************
@@ -214,6 +239,28 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
           (GPDMA_CXCR_EN|GPDMA_CXCR_SUSP) == 0))
     {
     }
+}
+
+/****************************************************************************
+ * Name: gpdma_ch_disable
+ *
+ * Description:
+ *   Disable the DMA channel.
+ *
+ ****************************************************************************/
+
+static void gpdma_ch_disable(struct gpdma_ch_s *chan)
+{
+  uint32_t bitmask;
+
+  DEBUGASSERT(chan != NULL);
+
+  gpdma_ch_abort(chan);
+
+  /* Disable and clear all interrupts. */
+
+  gpdmach_modifyreg32(chan, CH_CxCR_OFFSET, GPDMA_CXCR_ALLINTS, 0);
+  gpdmach_modifyreg32(chan, CH_CxFCR_OFFSET, 0, ~0);
 }
 
 /****************************************************************************
@@ -299,9 +346,28 @@ static int gpdma_setup_circular(struct gpdma_ch_s *chan,
 
 void weak_function arm_dma_initialize(void)
 {
-  struct gpdma_chan_s *chan;
-# warning "arm_dma_initialize not implemented!!"
+  struct gpdma_ch_s *chan;
+  int i;
+# warning "arm_dma_initialize not tested!!"
 
+  /* Initialize each DMA stream */
+
+  for (i = 0; i < sizeof(g_chan) / sizeof(struct gpdma_ch_s); i++)
+    {
+      chan = &g_chan[i];
+
+      /* Attach DMA interrupt vectors */
+
+      irq_attach(chan->irq, gpdma_dmainterrupt, chan);
+
+      /* Disable the DMA channel */
+
+      gpdma_ch_disable(chan);
+
+      /* Enable the IRQ at the NVIC (still disabled at the DMA controller) */
+
+      up_enable_irq(chan->irq);
+    }
 }
 
  /****************************************************************************
@@ -426,14 +492,15 @@ void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
    * or software usage problem.
    */
 
-  if ((gpdmach_getreg(chan, CH_CxCR_OFFSET) & GPDMA_CXCR_EN) != 0)
-    {
-      gpdma_ch_abort(chan);
-    }
+  gpdma_ch_disable(chan);
+  // if ((gpdmach_getreg(chan, CH_CxCR_OFFSET) & GPDMA_CXCR_EN) != 0)
+  //   {
+  //     gpdma_ch_abort(chan);
+  //   }
 
   /* Clear any unhandled flags from previous transactions */
 
-  gpdmach_putreg(chan, CH_CxFCR_OFFSET, 0x7f << 8);
+  // gpdmach_putreg(chan, CH_CxFCR_OFFSET, 0x7f << 8);
 
   if (cfg->mode & GPDMACFG_MODE_CIRC)
     {
@@ -462,7 +529,7 @@ void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
 void stm32_dmastart(DMA_HANDLE handle, dma_callback_t callback, void *arg,
                     bool half)
 {
-  struct gpdma_ch_s *chan = (struct gpdma_chan_s *)handle;
+  struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
   uint32_t cr;
 
   DEBUGASSERT(handle != NULL);
@@ -527,7 +594,8 @@ void stm32_dmastart(DMA_HANDLE handle, dma_callback_t callback, void *arg,
 void stm32_dmastop(DMA_HANDLE handle)
 {
   struct gpdma_ch_s *chan = (struct gpdma_ch_s *)handle;
-  gpdma_ch_abort(chan);
+  gpdma_ch_disable(chan);
+  // gpdma_ch_abort(chan);
 }
 
 /****************************************************************************
