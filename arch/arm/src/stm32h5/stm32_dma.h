@@ -34,19 +34,6 @@
 
 #include "hardware/stm32_gpdma.h"
 
-/* These definitions provide the bit encoding of the 'status' parameter
- * passed to the DMA callback function (see dma_callback_t).
- */
-
-//  #define DMA_STATUS_FEIF           0                    /* Stream FIFO error (ignored) */
-//  #define DMA_STATUS_DMEIF          DMA_STREAM_DMEIF_BIT /* Stream direct mode error */
-//  #define DMA_STATUS_TEIF           DMA_STREAM_TEIF_BIT  /* Stream Transfer Error */
-//  #define DMA_STATUS_HTIF           DMA_STREAM_HTIF_BIT  /* Stream Half Transfer */
-//  #define DMA_STATUS_TCIF           DMA_STREAM_TCIF_BIT  /* Stream Transfer Complete */
- 
-//  #define DMA_STATUS_ERROR          (DMA_STATUS_FEIF | DMA_STATUS_DMEIF | DMA_STATUS_TEIF)
-//  #define DMA_STATUS_SUCCESS        (DMA_STATUS_TCIF | DMA_STATUS_HTIF)
-
 #ifdef CONFIG_DEBUG_DMA_INFO
 #  error "CONFIG_DEBUG_DMA_INFO not yet implemented."
 #  undef CONFIG_DEBUG_DMA_INFO
@@ -60,6 +47,21 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+/* These definitions provide the bit encoding of the 'status' parameter
+ * passed to the DMA callback function (see dma_callback_t).
+ */
+
+#define DMA_STATUS_TCF        (1 << 0) /* Transfer Complete */
+#define DMA_STATUS_HTF        (1 << 1) /* Half Transfer */
+#define DMA_STATUS_DTEF       (1 << 2) /* Data transfer error */
+#define DMA_STATUS_ULEF       (1 << 3) /* Update link transfer error */
+#define DMA_STATUS_USEF       (1 << 4) /* User setting error */
+#define DMA_STATUS_SUSPF      (1 << 5) /* Completed suspension flag */
+#define DMA_STATUS_TOF        (1 << 6) /* Trigger overrun flag */
+
+#define DMA_STATUS_ERROR      (DMA_STATUS_DTEF | DMA_STATUS_ULEF | DMA_STATUS_USEF | DMA_STATUS_TOF)
+#define DMA_STATUS_SUCCESS    (DMA_STATUS_TCF | DMA_STATUS_HTEF)
 
 /* GPDMA Mode Flags: WARNING!! NOT YET IMPLEMENTED! */
 
@@ -166,7 +168,7 @@ typedef void *DMA_HANDLE;
  * Input Parameters:
  *   handle - Refers to the DMA channel or stream
  *   status - A bit encoded value that provides the completion status.  See
- *            the DMASTATUS_* definitions above.
+ *            the DMA_STATUS_* definitions above.
  *   arg    - A user-provided value that was provided when stm32_dmastart()
  *            was called.
  */
