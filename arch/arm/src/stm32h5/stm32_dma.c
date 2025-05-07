@@ -168,6 +168,8 @@ static struct gpdma_ch_s g_chan[] =
 
 static uint32_t circ_addr_1;
 
+static uint32_t circ_addr_1;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -373,6 +375,9 @@ static int gpdma_setup_circular(struct gpdma_ch_s *chan,
   // DEBUGASSERT(0);
   return gpdma_setup(chan, cfg);
   // return -ENOTSUP;
+  // DEBUGASSERT(0);
+  return gpdma_setup(chan, cfg);
+  // return -ENOTSUP;
 }
 
 /****************************************************************************
@@ -439,6 +444,7 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
   DMA_HANDLE handle = NULL;
   irqstate_t flags;
   int i;
+  int i;
 
   /* Currently no support for M2M or 2D addressing modes.
    * TODO: Remove when support is added!
@@ -449,8 +455,10 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
 
   flags = enter_critical_section();
 
+
   if (type == GPDMA_TTYPE_M2P || type == GPDMA_TTYPE_P2M)
     {
+      for (i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
       for (i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
         {
           struct gpdma_ch_s *chan = &g_chan[i];
@@ -464,6 +472,7 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
             }
         }
     }
+
 
   leave_critical_section(flags);
 
