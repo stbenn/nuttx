@@ -166,6 +166,8 @@ static struct gpdma_ch_s g_chan[] =
   }
 };
 
+static uint32_t circ_addr_1;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -336,6 +338,17 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
   reg = cfg->ntransfers *
       ((cfg->tr1 & GPDMA_CXTR1_SDW_LOG2_MASK) >> GPDMA_CXTR1_SDW_LOG2_SHIFT);
 
+  if (cfg->mode & GPDMACFG_MODE_CIRC)
+    {
+      /* This only targets peripheral to memory, with memory increment */
+      circ_addr_1 = cfg->dest_addr;
+      gpdmach_putreg(chan, CH_CxLBAR_OFFSET,
+                    (uint32_t)&circ_addr_1 & (0xffff << 16));
+
+      reg = GPDMA_CXLLR_UDA | ((uint32_t)&circ_addr_1 & GPDMA_CXLLR_LA_MASK);
+      gpdmach_putreg(chan, CH_CxLLR_OFFSET, reg);
+    }
+
   gpdmach_putreg(chan, CH_CxBR1_OFFSET, reg);
 
   return 0;
@@ -357,8 +370,9 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
 static int gpdma_setup_circular(struct gpdma_ch_s *chan,
                                 struct stm32_gpdma_cfg_s *cfg)
 {
-  DEBUGASSERT(0);
-  return -ENOTSUP;
+  // DEBUGASSERT(0);
+  return gpdma_setup(chan, cfg);
+  // return -ENOTSUP;
 }
 
 /****************************************************************************
@@ -424,6 +438,7 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
 
   DMA_HANDLE handle = NULL;
   irqstate_t flags;
+  int i;
 
   /* Currently no support for M2M or 2D addressing modes.
    * TODO: Remove when support is added!
@@ -433,9 +448,10 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
   DEBUGASSERT(type != GPDMA_TTYPE_2D);
 
   flags = enter_critical_section();
+
   if (type == GPDMA_TTYPE_M2P || type == GPDMA_TTYPE_P2M)
     {
-      for (int i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
+      for (i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
         {
           struct gpdma_ch_s *chan = &g_chan[i];
 
@@ -448,6 +464,7 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
             }
         }
     }
+
   leave_critical_section(flags);
 
   if (handle == NULL)
