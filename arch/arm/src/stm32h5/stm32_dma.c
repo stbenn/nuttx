@@ -345,7 +345,7 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
       gpdmach_putreg(chan, CH_CxLBAR_OFFSET,
                     (uint32_t)&circ_addr_1 & (0xffff << 16));
 
-      reg = GPDMA_CXLLR_USA | ((uint32_t)&circ_addr_1 & GPDMA_CXLLR_LA_MASK);
+      reg = GPDMA_CXLLR_UDA | ((uint32_t)&circ_addr_1 & GPDMA_CXLLR_LA_MASK);
       gpdmach_putreg(chan, CH_CxLLR_OFFSET, reg);
     }
 
