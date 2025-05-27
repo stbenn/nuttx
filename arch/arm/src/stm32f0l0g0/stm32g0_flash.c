@@ -683,6 +683,7 @@ ssize_t up_progmem_eraseblock(size_t block)
 {
   int ret;
   size_t block_address;
+  uint32_t reg;
 
   ret = flash_verify_blocknum(block);
   if (ret < 0)
@@ -724,7 +725,9 @@ ssize_t up_progmem_eraseblock(size_t block)
    * match the correct bank.
    */
 
-  if (block >= flash_bank2_priv.stblock)
+  reg = getreg32(STM32_FLASH_OPTR) | FLASH_OPTR_NSWAP_BANK;
+  if ((block >= flash_bank2_priv.stblock && reg) ||
+      (block < flash_bank2_priv.stblock && !reg))
     {
       modifyreg32(STM32_FLASH_CR, 0, FLASH_CR_BKER);
     }
