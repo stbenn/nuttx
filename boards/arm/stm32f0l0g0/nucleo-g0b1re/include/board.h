@@ -28,6 +28,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <sys/boardctl.h>
 
 #ifndef __ASSEMBLY__
 #  include <stdint.h>
@@ -206,5 +207,8 @@
 /* ADC */
 
 #define ADC1_DMA_CHAN DMACHAN_ADC1     /* DMA1_CH1 */
+
+#define BOARDCTL_BANKSWAP (BOARDIOC_USER + 1)
+#define BOARDCTL_OPTLOAD  (BOARDIOC_USER + 2)
 
 #endif /* __BOARDS_ARM_STM32F0L0G0_NUCLEO_G0B1RE_INCLUDE_BOARD_H */

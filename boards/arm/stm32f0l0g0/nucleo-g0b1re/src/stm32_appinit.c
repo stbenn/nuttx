@@ -33,6 +33,8 @@
 #include <nuttx/leds/userled.h>
 
 #include "nucleo-g0b1re.h"
+#include "stm32_flash.h"
+#include <arch/board/board.h>
 
 /****************************************************************************
  * Public Functions
@@ -75,3 +77,22 @@ int board_app_initialize(uintptr_t arg)
   return stm32_bringup();
 #endif
 }
+
+#ifdef CONFIG_BOARDCTL_IOCTL
+int board_ioctl(unsigned int cmd, uintptr_t arg)
+{
+  switch (cmd)
+  {
+    case BOARDCTL_BANKSWAP:
+      {
+        return stm32_flash_swapbanks();
+      }
+    case BOARDCTL_OPTLOAD:
+      {
+        return stm32_flash_optload();
+      }
+    default:
+      return 0;
+  }
+}
+#endif
