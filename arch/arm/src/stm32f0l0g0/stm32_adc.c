@@ -59,7 +59,7 @@
 
 #if defined(CONFIG_STM32F0L0G0_ADC1)
 
-#if defined(CONFIG_STM32F0L0G0_STM32F0) || defined(CONFIG_STM32F0L0G0_STM32G0)
+#if defined(CONFIG_STM32F0L0G0_STM32F0)
 #  error Not tested
 #endif
 
@@ -141,7 +141,8 @@
 
 #if defined(CONFIG_STM32F0L0G0_STM32F0) || \
     defined(CONFIG_STM32F0L0G0_STM32L0) || \
-    defined(CONFIG_STM32F0L0G0_STM32C0)
+    defined(CONFIG_STM32F0L0G0_STM32C0) || \
+    defined(CONFIG_STM32F0L0G0_STM32G0)
 #  define ADC_CHANNELS_NUMBER 19
 #else
 #  error "Not supported"
@@ -171,6 +172,12 @@
 /* ADC DMA configuration bit support */
 
 #define ADC_HAVE_DMACFG 1
+
+#if defined(CONFIG_STM32F0L0G0_STM32G0)
+#  ifndef ANIOC_SET_OVERSAMPLE
+#    define ANIOC_SET_OVERSAMPLE _ANIOC(0x0f)
+#  endif
+#endif
 
 /****************************************************************************
  * Private Types
@@ -1132,6 +1139,11 @@ static void adc_common_cfg(struct stm32_dev_s *priv)
   uint32_t clrbits = 0;
   uint32_t setbits = 0;
 
+#if defined(CONFIG_STM32F0L0G0_STM32G0)
+  clrbits |= ADC_CCR_PRESC_MASK | ADC_CCR_VREFEN | ADC_CCR_TSEN | ADC_CCR_VBATEN;
+  setbits |= ADC_CCR_PRESC_2 | ADC_CCR_VREFEN;
+#else
+
   /* REVISIT: for now we reset all CCR bits */
 
   clrbits |= ADC_CCR_VREFEN;
@@ -1150,8 +1162,9 @@ static void adc_common_cfg(struct stm32_dev_s *priv)
 #endif
 
   setbits = 0;
+#endif
 
-  adccmn_modifyreg(priv, STM32_ADC_CCR_OFFSET, clrbits, setbits);
+  adc_modifyreg(priv, STM32_ADC_CCR_OFFSET, clrbits, setbits);
 }
 
 #ifdef ADC_HAVE_DMA
@@ -1859,6 +1872,49 @@ static int adc_ioc_change_ints(struct adc_dev_s *dev, int cmd, bool arg)
   return ret;
 }
 
+/* Only define an oversampling IOCTL if building for G0 */
+#if defined(CONFIG_STM32F0L0G0_STM32G0)
+
+/****************************************************************************
+ * Name: adc_ioc_set_oversample
+ *
+ * Description:
+ *   (G0 only) Configure hardware oversampling in CFGR2.
+ *
+ *   arg’s format:
+ *     [10:8] = ratio index (0→×2, 1→×4, 2→×8, …, 7→×256)
+ *     [ 3:0] = right‐shift bits (0..15)
+ *
+ ****************************************************************************/
+static int adc_ioc_set_oversample(FAR struct adc_dev_s *dev, unsigned long arg)
+{
+  FAR struct stm32_dev_s *priv = (FAR struct stm32_dev_s *)dev->ad_priv;
+  uint32_t ratio = (arg >> 8) & 0x7;   /* 3‐bit oversample ratio */
+  uint32_t shift = arg & 0xF;         /* 4‐bit right shift */
+  uint32_t clrbits;
+  uint32_t setbits;
+
+  /* CFGR2 bits to clear: OVSE, OVSR[2:0], OVSS[3:0], TOVS */
+  clrbits  = ADC_CFGR2_OVSE
+           | ADC_CFGR2_OVSR_MASK
+           | ADC_CFGR2_OVSS_MASK
+           | ADC_CFGR2_TOVS;
+
+  /* Build new settings: enable OVSE, set exact OVSR and OVSS */
+  setbits  = ADC_CFGR2_OVSE
+           | (ratio << ADC_CFGR2_OVSR_SHIFT)
+           | (shift << ADC_CFGR2_OVSS_SHIFT);
+  /* If you want “triggered oversample” instead of continuous, also do:
+   *    setbits |= ADC_CFGR2_TOVS;
+   */
+
+  /* Write CFGR2 (clear old, set new) */
+  adc_modifyreg(priv, STM32_ADC_CFGR2_OFFSET, clrbits, setbits);
+  return OK;
+}
+
+#endif /* CONFIG_STM32F0L0G0_STM32G0 */
+
 /****************************************************************************
  * Name: adc_set_ch
  *
@@ -1936,19 +1992,16 @@ static int adc_ioctl(struct adc_dev_s *dev, int cmd, unsigned long arg)
       case ANIOC_TRIGGER:
         {
           /* Start regular conversion if regular channels configured */
-
           if (priv->cr_channels > 0)
             {
               adc_reg_startconv(priv, true);
             }
-
           break;
         }
 
       case ANIOC_GET_NCHANNELS:
         {
           /* Return the number of configured channels */
-
           ret = priv->cr_channels;
         }
         break;
@@ -1956,12 +2009,10 @@ static int adc_ioctl(struct adc_dev_s *dev, int cmd, unsigned long arg)
       case IO_TRIGGER_REG:
         {
           /* Start regular conversion if regular channels configured */
-
           if (priv->cr_channels > 0)
             {
               adc_reg_startconv(priv, true);
             }
-
           break;
         }
 
@@ -2018,7 +2069,6 @@ static int adc_ioctl(struct adc_dev_s *dev, int cmd, unsigned long arg)
           if (ch)
             {
               /* Clear fifo if upper-half driver enabled */
-
               dev->ad_recv.af_head = 0;
               dev->ad_recv.af_tail = 0;
             }
@@ -2027,6 +2077,14 @@ static int adc_ioctl(struct adc_dev_s *dev, int cmd, unsigned long arg)
           adc_reg_startconv(priv, true);
           break;
         }
+
+#if defined(CONFIG_STM32F0L0G0_STM32G0)
+      case ANIOC_SET_OVERSAMPLE:
+        {
+          ret = adc_ioc_set_oversample(dev, arg);
+          break;
+        }
+#endif
 
       default:
         {
