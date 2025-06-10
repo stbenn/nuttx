@@ -54,8 +54,15 @@
 #  if defined(CONFIG_ARCH_CHIP_STM32C0)
 #    define DMA1_NCHAN  5
 #    define DMA2_NCHAN  0
+#  elif defined(CONFIG_STM32F0L0G0_STM32G0)
+#    define DMA1_NCHAN  7
+#    ifdef CONFIG_STM32_HAVE_DMA2
+#      define DMA2_NCHAN 5
+#    else
+#      define DMA2_NCHAN 0
+#    endif
 #  else
-#    error
+#    error "Unsupported STM32F0L0G0 subfamily"
 #  endif
 #else
 #  define DMA1_NCHAN    0
@@ -75,8 +82,14 @@
 
 #if defined(CONFIG_ARCH_CHIP_STM32C0)
 #  define DMAMUX_NCHANNELS 5
+#elif defined(CONFIG_STM32F0L0G0_STM32G0)
+#  ifdef CONFIG_STM32_HAVE_DMA2
+#    define DMAMUX_NCHANNELS 12  /* DMA1 (0-6) + DMA2 (7-11) */
+#  else
+#    define DMAMUX_NCHANNELS 7   /* Only DMA1 (0-6) */
+#  endif
 #else
-#  error
+#  error "Unknown chip for DMAMUX channel count"
 #endif
 
 /****************************************************************************
