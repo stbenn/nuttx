@@ -109,16 +109,23 @@
 #endif
 
 #if defined(ADC_HAVE_DMA) || (ADC_MAX_SAMPLES == 1)
-#  ifdef ADC_SMPR_13p5
-#    define ADC_SMP1_DEFAULT  ADC_SMPR_13p5
-#    define ADC_SMP2_DEFAULT  ADC_SMPR_13p5
-#  else
+#  if defined(CONFIG_ARCH_CHIP_STM32C0) || defined(CONFIG_ARCH_CHIP_STM32G0)
 #    define ADC_SMP1_DEFAULT  ADC_SMPR_12p5
-#    define ADC_SMP2_DEFAULT  ADC_SMPR_12p5
+#    ifdef ADC_HAVE_SMPR_SMP2
+#      define ADC_SMP2_DEFAULT    ADC_SMPR_12p5
+#    endif
+#  else
+#    define ADC_SMP1_DEFAULT  ADC_SMPR_13p5
 #  endif
 #else /* Slow down sampling frequency */
-#  define ADC_SMP1_DEFAULT    ADC_SMPR_239p5
-#  define ADC_SMP2_DEFAULT    ADC_SMPR_239p5
+#  if defined(CONFIG_ARCH_CHIP_STM32C0) || defined(CONFIG_ARCH_CHIP_STM32G0)
+#    define ADC_SMP1_DEFAULT    ADC_SMPR_160p5
+#    ifdef ADC_HAVE_SMPR_SMP2
+#      define ADC_SMP2_DEFAULT    ADC_SMPR_160p5
+#    endif
+#  else
+#    define ADC_SMP1_DEFAULT    ADC_SMPR_239p5
+#  endif
 #endif
 
 #ifdef ADC_HAVE_SMPR_SMP2
@@ -1408,6 +1415,10 @@ static void adc_mode_cfg(struct stm32_dev_s *priv)
   clrbits |= ADC_CFGR1_EXTEN_MASK;
   setbits |= ADC_CFGR1_EXTEN_NONE;
 
+#ifdef CONFIG_STM32F0L0G0_ADC1_CONTINUOUS
+  setbits |= ADC_CFGR1_CONT;
+#endif
+
   /* Set CFGR configuration */
 
   adc_modifyreg(priv, STM32_ADC_CFGR1_OFFSET, clrbits, setbits);
@@ -1446,16 +1457,28 @@ static void adc_sampletime_cfg(struct adc_dev_s *dev)
 
   /* Configure sample time 1 */
 
+#  ifdef STM32_ADC_SMPR_SMP1
+  setbits |= STM32_ADC_SMPR_SMP1 << ADC_SMPR_SMP1_SHIFT;
+#  else
   setbits |= ADC_SMP1_DEFAULT << ADC_SMPR_SMP1_SHIFT;
+#  endif
 
 #  ifdef ADC_HAVE_SMPR_SMP2
   /* Configure sample time 2 */
 
+#    ifdef STM32_ADC_SMPR_SMP2
+  setbits |= STM32_ADC_SMPR_SMP2 << ADC_SMPR_SMP2_SHIFT;
+#    else
   setbits |= ADC_SMP2_DEFAULT << ADC_SMPR_SMP2_SHIFT;
+#    endif
 
   /* Configure sample time selection */
 
+#    ifdef STM32_ADC_SMPR_SMPSEL
+  setbits |= STM32_ADC_SMPR_SMPSEL;
+#    else
   setbits |= ADC_SMPSEL_DEFAULT << ADC_SMPR_SMPSEL_SHIFT;
+#    endif
 #  endif
 
   /* Write SMPR register */
@@ -1596,7 +1619,7 @@ static void adc_configure(struct adc_dev_s *dev)
 
   adc_voltreg_cfg(priv);
 
-  /* Calibrate ADC - doesn't work for now */
+  /* Calibrate ADC */
 
   adc_calibrate(priv);
 
