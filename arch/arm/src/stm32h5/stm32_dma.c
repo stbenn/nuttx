@@ -352,12 +352,6 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
   gpdmach_putreg(chan, CH_CxTR2_OFFSET, reg);
 
   /* Calculate block number of data bytes to transfer, update BR1 */
-
-  /*
-  reg = cfg->ntransfers *
-      ((cfg->tr1 & GPDMA_CXTR1_SDW_LOG2_MASK) >> GPDMA_CXTR1_SDW_LOG2_SHIFT);
-
-  */
   reg = cfg->ntransfers;
 
   if (cfg->mode & GPDMACFG_MODE_CIRC)
