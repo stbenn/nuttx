@@ -146,7 +146,8 @@ struct stm32_dev_s
 
   /* DMA transfer buffer */
 
-  uint16_t dmabuffer[ADC_MAX_SAMPLES];
+  /*uint16_t dmabuffer[2][ADC_MAX_SAMPLES];*/
+  uint16_t dmabuffer[2*ADC_MAX_SAMPLES];
 #endif
 
   /* List of selected ADC channels to sample */
@@ -195,8 +196,9 @@ static int  adc_timinit(struct stm32_dev_s *priv);
 #ifdef ADC_HAVE_DMA
 static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status,
                                 void *arg);
-static void adc_dmacfg_oneshot(struct stm32_dev_s *priv,
-                               struct stm32_gpdma_cfg_s *cfg);
+static void adc_dmacfg(struct stm32_dev_s *priv,
+                               struct stm32_gpdma_cfg_s *cfg,
+                               bool circular);
 #endif
 
 /* ADC Interrupt Handler */
@@ -800,7 +802,6 @@ static void adc_reset(struct adc_dev_s *dev)
  *   None
  *
  ****************************************************************************/
-
 #ifdef ADC_HAVE_DMA
 static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status, void *arg)
 {
@@ -808,74 +809,109 @@ static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status, void *arg)
   struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
   int i;
 
-  /* Verify that the upper-half driver has bound its callback functions */
+  if ((status & DMA_STATUS_TCF) == 0)
+    {
+      return;
+    }
 
+  if (!priv->cb || !priv->cb->au_receive)
+    {
+      return;
+    }
+
+  for (i = 0; i < priv->nchannels; i++)
+    {
+      uint16_t sample = priv->dmabuffer[i];
+      uint8_t  channel = priv->chanlist[i];
+      priv->cb->au_receive(dev, channel, sample);
+    }
+}
+#endif
+
+#if 0
+/* Code for oneshot */
+static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status, void *arg)
+{
+  struct adc_dev_s   *dev  = (struct adc_dev_s *)arg;
+  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
+  struct stm32_gpdma_cfg_s dmacfg;
+  int i;
+
+  /* Verify that the upper-half has bound its callback */
   if (priv->cb != NULL)
     {
       DEBUGASSERT(priv->cb->au_receive != NULL);
 
+      /* Deliver one sample per configured channel */
       for (i = 0; i < priv->nchannels; i++)
         {
-          priv->cb->au_receive(dev, priv->chanlist[priv->current],
-                               priv->dmabuffer[priv->current]);
+          priv->cb->au_receive(dev,
+                              priv->chanlist[priv->current],
+                              priv->dmabuffer[priv->current]);
           priv->current++;
           if (priv->current >= priv->nchannels)
             {
-              /* Restart the conversion sequence from the beginning */
-
+              /* wrap around */
               priv->current = 0;
             }
         }
     }
 
-  /* Restart DMA for the next conversion series */
+  /* Reconfigure DMA for the next one-shot burst */
+  adc_dmacfg_oneshot(priv, &dmacfg);
+  stm32_dmasetup(priv->dma, &dmacfg);
+  stm32_dmastart(priv->dma, adc_dmaconvcallback, dev, false);
 
-  adc_modifyreg(priv, STM32_ADC_CFGR_OFFSET, ADC_CFGR_DMAEN, 0);
-  adc_modifyreg(priv, STM32_ADC_CFGR_OFFSET, 0, ADC_CFGR_DMAEN);
+  /* Restart the ADC conversion (if not already continuous) */
+  adc_startconv(priv, true);
 }
 #endif
 
 /****************************************************************************
- * Name: adc_dmacfg_oneshot
+ * Name: adc_dmacfg
  *
  * Description:
  *   Generate the required DMA configuration structure for oneshot mode based
  *   on the ADC configuration.
  *
  * Input Parameters:
- *   priv - ADC instance structure
- *   cfg  - DMA configuration structure
+ *   priv     - ADC instance structure
+ *   cfg      - DMA configuration structure
+ *   circular - 0 = oneshot, 1 = circular
  *
  * Returned Value:
  *   None
  ****************************************************************************/
-#ifdef ADC_HAVE_DMA
-static void adc_dmacfg_oneshot(struct stm32_dev_s *priv,
-                               struct stm32_gpdma_cfg_s *cfg)
+static void adc_dmacfg(struct stm32_dev_s *priv,
+                       struct stm32_gpdma_cfg_s *cfg,
+                       bool circular)
 {
-  cfg->src_addr = priv->base + STM32_ADC_DR_OFFSET;
-  cfg->dest_addr = (uintptr_t)priv->dmabuffer;
+  const uint32_t sdw_log2 = 1;  /* Always 16-bit half-word for ADC_DR */
 
-  cfg->request = (priv->base == STM32_ADC1_BASE) ? GPDMA_REQ_ADC1 :
-                                                   GPDMA_REQ_ADC2;
+  /* 1) Addresses */
+  cfg->src_addr   = priv->base + STM32_ADC_DR_OFFSET;
+  cfg->dest_addr  = (uintptr_t)priv->dmabuffer;
 
-  cfg->priority = GPMDACFG_PRIO_LH;
-  cfg->ntransfers = priv->cchannels;
-  cfg->mode = 0;
+  /* 2) Request line */
+  cfg->request    = (priv->base == STM32_ADC1_BASE)
+                     ? GPDMA_REQ_ADC1
+                     : GPDMA_REQ_ADC2;
 
-  /* TR1 configuration:
-   *   - No data manipulation
-   *   - Ports: source = 0, dest = 1
-   *   - Data size: half word
-   *   - Burst length: 0
-   *   - Destination address increment
-   *   - Source address static
-   */
+  /* 3) Priority */
+  cfg->priority   = GPMDACFG_PRIO_LH;
 
-  cfg->tr1 = (GPDMA_CXTR1_DAP | GPDMA_CXTR1_DINC | GPDMA_CXTR1_DDW_LOG2_HW |
-              GPDMA_CXTR1_SDW_LOG2_HW);
+  /* 4) Mode: one-shot or circular */
+  cfg->mode       = circular ? GPDMACFG_MODE_CIRC : 0;
+
+  /* 5) Total bytes */
+  cfg->ntransfers = priv->cchannels * (1u << sdw_log2);
+
+  /* 6) TR1: data-path (widths + increments) */
+  cfg->tr1        = (sdw_log2 << GPDMA_CXTR1_SDW_LOG2_SHIFT)
+                  | (sdw_log2 << GPDMA_CXTR1_DDW_LOG2_SHIFT)
+                  | GPDMA_CXTR1_DINC;  /* dest-inc, source fixed */
+
 }
-#endif
 
 /****************************************************************************
  * Name: adc_setup
@@ -1011,12 +1047,21 @@ static int adc_setup(struct adc_dev_s *dev)
           stm32_dmastop(priv->dma);
           stm32_dmafree(priv->dma);
         }
+      else
+        {
+          priv->dma = stm32_dmachannel(GPDMA_TTYPE_P2M);
+        }
 
-      priv->dma = stm32_dmachannel(GPDMA_TTYPE_P2M);
 
       /* Setup DMA in oneshot mode */
+      /* Turn on continuous conversion */
+      /* TODO - Put somewhere else */
+      uint32_t cfgr = getreg32(priv->base + STM32_ADC_CFGR_OFFSET);
+      cfgr |= ADC_CFGR_CONT;
+      cfgr |= ADC_CFGR_DMACFG;  /* DMACFG = 1 for circular DMA in ADC */
+      putreg32(cfgr, priv->base + STM32_ADC_CFGR_OFFSET);
 
-      adc_dmacfg_oneshot(priv, &dmacfg);
+      adc_dmacfg(priv, &dmacfg, 1);
 
       stm32_dmasetup(priv->dma, &dmacfg);
 

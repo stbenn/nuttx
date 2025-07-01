@@ -69,6 +69,16 @@
  * Private Types
  ****************************************************************************/
 
+ struct stm32_gpdma_lli_s
+{
+  uint32_t tr1;   /* GPDMA_CxTR1 value */
+  uint32_t tr2;   /* GPDMA_CxTR2 value */
+  uint32_t br1;   /* GPDMA_CxBR1 value (block size in bytes) */
+  uint32_t sar;   /* GPDMA_CxSAR (source address) */
+  uint32_t dar;   /* GPDMA_CxDAR (dest address) */
+  uint32_t llr;   /* GPDMA_CxLLR (pointer+update bits) */
+} __attribute__((aligned(32)));  /* LLI pointers must be 4-byte aligned; 32-byte keeps cache lines happy */
+
 struct gpdma_ch_s
 {
   uint8_t            dma_instance; /* GPDMA1 or GPDMA2 */
@@ -80,6 +90,7 @@ struct gpdma_ch_s
   dma_callback_t     callback;
   void              *arg;
   struct stm32_gpdma_cfg_s cfg;   /* Configuration passed at channel setup */
+  struct stm32_gpdma_lli_s lli[2];
 };
 
 /****************************************************************************
@@ -106,6 +117,7 @@ static int gpdma_dmainterrupt(int irq, void *context, void *arg);
  * Private Data
  ****************************************************************************/
 
+#ifdef CONFIG_STM32H5_DMA1
 static struct gpdma_ch_s g_chan[] = 
 {
   {
@@ -136,6 +148,8 @@ static struct gpdma_ch_s g_chan[] =
     .free = true,
     .base = STM32_DMA1_BASE + CH_BASE_OFFSET(3)
   },
+#endif
+#ifdef CONFIG_STM32H5_DMA2
   {
     .dma_instance = 2,
     .channel = 0,
@@ -164,6 +178,7 @@ static struct gpdma_ch_s g_chan[] =
     .free = true,
     .base = STM32_DMA2_BASE + CH_BASE_OFFSET(3)
   }
+#endif
 };
 
 static uint32_t circ_addr_1;
@@ -273,8 +288,7 @@ static void gpdma_ch_abort(struct gpdma_ch_s *chan)
 
   // 4. Wait for GPDMA_CxCR.EN and GPDMA_CxCR.SUSP bits to be reset
 
-  while ((gpdmach_getreg(chan, CH_CxCR_OFFSET) &
-          (GPDMA_CXCR_EN|GPDMA_CXCR_SUSP)) == 0)
+  while ((gpdmach_getreg(chan, CH_CxCR_OFFSET) & (GPDMA_CXCR_EN|GPDMA_CXCR_SUSP)) != 0)
     {
     }
 }
@@ -314,6 +328,8 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
   /* Make sure not to use linked list mode. */
   // Do I also need to clear CxLBAR?
   gpdmach_modifyreg32(chan, CH_CxLLR_OFFSET, ~0, 0);
+  gpdmach_putreg(chan, CH_CxLBAR_OFFSET, 0);
+
 
   /* Set source and destination addresses. */
 
@@ -337,8 +353,12 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
 
   /* Calculate block number of data bytes to transfer, update BR1 */
 
+  /*
   reg = cfg->ntransfers *
       ((cfg->tr1 & GPDMA_CXTR1_SDW_LOG2_MASK) >> GPDMA_CXTR1_SDW_LOG2_SHIFT);
+
+  */
+  reg = cfg->ntransfers;
 
   if (cfg->mode & GPDMACFG_MODE_CIRC)
     {
@@ -368,16 +388,55 @@ static int gpdma_setup(struct gpdma_ch_s *chan, struct stm32_gpdma_cfg_s *cfg)
  *   No implementation yet!! This will be added in the future.
  *
  ****************************************************************************/
-
 static int gpdma_setup_circular(struct gpdma_ch_s *chan,
                                 struct stm32_gpdma_cfg_s *cfg)
 {
-  // DEBUGASSERT(0);
-  return gpdma_setup(chan, cfg);
-  // return -ENOTSUP;
-  // DEBUGASSERT(0);
-  return gpdma_setup(chan, cfg);
-  // return -ENOTSUP;
+  struct stm32_gpdma_lli_s *lli = chan->lli;   /* assume chan->lli was allocated as 2 entries */
+  /* Figure out the transfer width from TR1: */
+  uint32_t ddw_log2 = (cfg->tr1 & GPDMA_CXTR1_DDW_LOG2_MASK)
+                    >> GPDMA_CXTR1_DDW_LOG2_SHIFT;
+  /* Bytes per beat (sample) */
+  uint32_t beat_bytes = 1u << ddw_log2;
+  /* Number of beats in one scan is cfg->ntransfers */
+  uint32_t row_bytes  = cfg->ntransfers * beat_bytes;
+
+  uintptr_t sar   = cfg->src_addr;
+
+  /* Build LLI[0] → buffer[0] */
+  lli[0].tr1 = cfg->tr1;
+  /* TCEM=11 → only one TCF per full chain */
+  lli[0].tr2 = (2U << GPDMA_CXTR2_TCEM_SHIFT)
+            | (cfg->request & GPDMA_CXTR2_REQSEL_MASK);
+  lli[0].br1 = cfg->ntransfers;                          /* full scan */
+  lli[0].sar = sar;
+  lli[0].dar = cfg->dest_addr;                 /* &dmabuffer[0][0] */
+  /* reload everything & link to LLI[1] */
+  lli[0].llr = (GPDMA_CXLLR_UT1|GPDMA_CXLLR_UT2|
+               GPDMA_CXLLR_UB1|GPDMA_CXLLR_USA|
+               GPDMA_CXLLR_UDA|GPDMA_CXLLR_ULL) |
+              (((uint32_t)&lli[1]) & GPDMA_CXLLR_LA_MASK);
+
+  /* Build LLI[1] → buffer[1] */
+  lli[1].tr1 = lli[0].tr1;
+  lli[1].tr2 = lli[0].tr2;
+  lli[0].br1 = cfg->ntransfers;                          /* full scan */
+  lli[1].sar = sar;
+  lli[1].dar = cfg->dest_addr + row_bytes;         /* &dmabuffer[1][0] */
+  /* reload everything & link back to LLI[0] */
+  lli[1].llr = (lli[0].llr & ~GPDMA_CXLLR_LA_MASK)
+            | (((uint32_t)&lli[0]) & GPDMA_CXLLR_LA_MASK);
+
+  gpdmach_putreg(chan, CH_CxSAR_OFFSET,      lli[0].sar);
+  gpdmach_putreg(chan, CH_CxDAR_OFFSET,      lli[0].dar);
+  gpdmach_putreg(chan, CH_CxTR1_OFFSET,      lli[0].tr1);
+  gpdmach_putreg(chan, CH_CxTR2_OFFSET,      lli[0].tr2);
+  gpdmach_putreg(chan, CH_CxBR1_OFFSET,      lli[0].br1);
+
+  /* Point the DMA at the first descriptor */
+  gpdmach_putreg(chan, CH_CxLBAR_OFFSET, (uint32_t)&lli[0]);
+  gpdmach_putreg(chan, CH_CxLLR_OFFSET, lli[0].llr);
+
+  return OK;
 }
 
 /****************************************************************************
@@ -444,7 +503,6 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
   DMA_HANDLE handle = NULL;
   irqstate_t flags;
   int i;
-  int i;
 
   /* Currently no support for M2M or 2D addressing modes.
    * TODO: Remove when support is added!
@@ -458,7 +516,6 @@ DMA_HANDLE stm32_dmachannel(enum gpdma_ttype_e type)
 
   if (type == GPDMA_TTYPE_M2P || type == GPDMA_TTYPE_P2M)
     {
-      for (i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
       for (i = 0; i < (sizeof(g_chan) / sizeof(struct gpdma_ch_s)); i++)
         {
           struct gpdma_ch_s *chan = &g_chan[i];
@@ -538,7 +595,7 @@ void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
 
   /* No special modes are currently supported. */
 
-  DEBUGASSERT(cfg->mode == 0);
+  /* DEBUGASSERT(cfg->mode == 0);
 
   /* Drivers using DMA should manage channel usage. If a DMA request is not
    * made on an error or an abort occurs, the driver should stop the DMA. If
