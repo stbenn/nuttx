@@ -803,44 +803,6 @@ static void adc_reset(struct adc_dev_s *dev)
  *
  ****************************************************************************/
 #ifdef ADC_HAVE_DMA
-static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status, void *arg)
-{
-  struct adc_dev_s   *dev  = (struct adc_dev_s *)arg;
-  struct stm32_dev_s *priv = (struct stm32_dev_s *)dev->ad_priv;
-  struct stm32_gpdma_cfg_s dmacfg;
-  int i;
-
-  if ((status & DMA_STATUS_TCF) == 0)
-    {
-      return;
-    }
-
-  if (!priv->cb || !priv->cb->au_receive)
-    {
-      return;
-    }
-
-  for (i = 0; i < priv->nchannels; i++)
-    {
-      uint16_t sample = priv->dmabuffer[i];
-      uint8_t  channel = priv->chanlist[i];
-      priv->cb->au_receive(dev, channel, sample);
-    }
-    uint32_t mode = 0x0;
-    if ((mode & GPDMACFG_MODE_CIRC) == 0)
-      {
-        /* Re-configure DMA for the next burst */
-        adc_dmacfg(priv, &dmacfg, false);      /* oneshot */
-        stm32_dmasetup(priv->dma, &dmacfg);
-        stm32_dmastart(priv->dma, adc_dmaconvcallback, dev, false);
-
-        /* Start another ADC conversion */
-        adc_startconv(priv, true);
-      }
-}
-#endif
-
-#if 0
 /* Code for oneshot */
 static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status, void *arg)
 {
@@ -869,13 +831,12 @@ static void adc_dmaconvcallback(DMA_HANDLE handle, uint8_t status, void *arg)
         }
     }
 
-  /* Reconfigure DMA for the next one-shot burst */
-  adc_dmacfg_oneshot(priv, &dmacfg);
+  /*
+  adc_dmacfg(priv, &dmacfg, 1);
   stm32_dmasetup(priv->dma, &dmacfg);
   stm32_dmastart(priv->dma, adc_dmaconvcallback, dev, false);
-
-  /* Restart the ADC conversion (if not already continuous) */
   adc_startconv(priv, true);
+  */
 }
 #endif
 
@@ -1058,14 +1019,11 @@ static int adc_setup(struct adc_dev_s *dev)
         }
 
 
-      /* Circular setup
       uint32_t cfgr = getreg32(priv->base + STM32_ADC_CFGR_OFFSET);
       cfgr |= ADC_CFGR_CONT;
       cfgr |= ADC_CFGR_DMACFG;
       putreg32(cfgr, priv->base + STM32_ADC_CFGR_OFFSET);
       adc_dmacfg(priv, &dmacfg, 1);
-      */
-      adc_dmacfg(priv, &dmacfg, 0);
 
       stm32_dmasetup(priv->dma, &dmacfg);
 
@@ -1109,7 +1067,7 @@ static int adc_setup(struct adc_dev_s *dev)
   /* Enable the ADC interrupt */
 
   ainfo("Enable the ADC interrupt: irq=%d\n", priv->irq);
-  up_enable_irq(priv->irq);
+  /* up_enable_irq(priv->irq); */
 
   priv->initialized = true;
 

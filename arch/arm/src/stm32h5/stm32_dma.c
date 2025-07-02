@@ -405,17 +405,20 @@ static int gpdma_setup_circular(struct gpdma_ch_s *chan,
   lli[0].sar = sar;
   lli[0].dar = cfg->dest_addr;                 /* &dmabuffer[0][0] */
   /* reload everything & link to LLI[1] */
-  lli[0].llr = (GPDMA_CXLLR_UT1|GPDMA_CXLLR_UT2|
-               GPDMA_CXLLR_UB1|GPDMA_CXLLR_USA|
-               GPDMA_CXLLR_UDA|GPDMA_CXLLR_ULL) |
-              (((uint32_t)&lli[1]) & GPDMA_CXLLR_LA_MASK);
+  lli[0].llr = (GPDMA_CXLLR_UT1  /* reload TR1 */
+              | GPDMA_CXLLR_UT2  /* reload TR2 */
+              | GPDMA_CXLLR_UB1  /* reload BR1 */
+              | GPDMA_CXLLR_USA  /* reload SAR */
+              | GPDMA_CXLLR_UDA  /* reload DAR */
+              | GPDMA_CXLLR_ULL) /* reload LLR */
+            | (((uint32_t)&lli[1]) & GPDMA_CXLLR_LA_MASK);
 
   /* Build LLI[1] → buffer[1] */
   lli[1].tr1 = lli[0].tr1;
   lli[1].tr2 = lli[0].tr2;
-  lli[0].br1 = cfg->ntransfers;                          /* full scan */
+  lli[1].br1 = cfg->ntransfers;                          /* full scan */
   lli[1].sar = sar;
-  lli[1].dar = cfg->dest_addr + row_bytes;         /* &dmabuffer[1][0] */
+  lli[1].dar = cfg->dest_addr;         /* &dmabuffer[1][0] */
   /* reload everything & link back to LLI[0] */
   lli[1].llr = (lli[0].llr & ~GPDMA_CXLLR_LA_MASK)
             | (((uint32_t)&lli[0]) & GPDMA_CXLLR_LA_MASK);
@@ -612,12 +615,10 @@ void stm32_dmasetup(DMA_HANDLE handle, struct stm32_gpdma_cfg_s *cfg)
 
   if (cfg->mode & GPDMACFG_MODE_CIRC)
     {
-      // Call circular mode setup
       gpdma_setup_circular(chan, cfg);
     }
   else
     {
-      // Call standard mode setup.
       gpdma_setup(chan, cfg);
     }
 }
